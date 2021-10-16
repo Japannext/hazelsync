@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "backup"
+version = "0.1.0"
+description = "Backup system"
+authors = ["Guillaume Ludinard <guillaume.ludinard@japannext.co.jp>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+click = "^8.0.3"
+sysrsync = "^1.0.0"
+PyYAML = "^6.0"
+invoke = "^1.6.0"
+pyzfs = "^0.2.3"
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^2.11.1"
+pytest = "^6.2.5"
+pytest-mock = "^3.6.1"
+
+[tool.poetry.scripts]
+backup = "backup.cli.main:cli"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
