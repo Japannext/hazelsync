@@ -1,15 +1,21 @@
 '''Retrieve a cluster configuration'''
 
+import sys
 from pathlib import Path
+from logging import getLogger
 
 import yaml
 
 from .type import BackupType, get_backup_job
 
+package_name = __name__.split('.')[0]
+log = getLogger(package_name)
+
 class Cluster:
     '''Class used to represent the cluster configuration for backup
     and restore'''
-    config_path = Path(f"/etc/{__name__}.yaml")
+    config_path = Path(f"/etc/{package_name}.yaml")
+    config_d = Path(f"/etc/{package_name}.d")
 
     def __init__(self, name: str, backup_type: BackupType, backup_options: dict):
         '''Create a cluster class
@@ -24,10 +30,15 @@ class Cluster:
     @classmethod
     def from_config(cls, name):
         '''Load a Cluster class from the config file'''
-        config = yaml.safe_load(cls.config_path)
-        clusters = config.get('clusters', {})
-        myconfig = clusters.get(name, {})
-        return cls(**myconfig)
+        config_file = cls.config_d / f"{name}.yaml"
+        if config_file.is_file():
+            with open(config_file) as f:
+                config = yaml.safe_load(f.read())
+        else:
+            log.error("Could not read config file at %s", config_file)
+            sys.exit(1)
+        log.debug("Loaded config from %s", config_file)
+        return cls(**config)
 
     def backup(self):
         '''Run the backup of a cluster'''

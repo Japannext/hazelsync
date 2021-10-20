@@ -34,8 +34,10 @@ def convert_enum(func):
         argspec = getfullargspec(func)
         args = list(args)
         print(func.__annotations__)
-        print(args)
-        print(kwargs)
+        print(f"Args: {args}")
+        print(f"kwargs: {kwargs}")
+        print(f"defaults: {argspec.defaults}")
+        print(f"kwonlydefaults: {argspec.kwonlydefaults}")
         for key, myclass in func.__annotations__.items():
             if issubclass(myclass, Enum):
                 try:
@@ -43,7 +45,9 @@ def convert_enum(func):
                     value = args[index]
                 except IndexError:
                     index = None
-                    value = kwargs[key]
+                    value = kwargs.get(key) or argspec.kwonlydefaults.get(key)
+                if value is None:
+                    raise TypeError(f"Argument {key} is missing")
                 enum_value = myclass(value)
                 if index is not None:
                     args[index] = enum_value

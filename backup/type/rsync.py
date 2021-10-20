@@ -19,21 +19,24 @@ class RunStyle(Enum):
 
 class Rsync:
     '''A backup method to rsync data from a collection of hosts'''
-    @convert_enum
     def __init__(self,
         hosts: List[str],
-        paths: List[Path],
-        slotdir: Path,
-        run_style: RunStyle = 'seq',
+        paths: List[str],
+        slotdir: str,
+        private_key: str,
+        run_style: str = 'seq',
     ):
         '''Create a new rsync plan.
         :param hosts: A list of hostnames to rsync to.
         :param paths: A list of path that will need to be rsynced from the target hosts.
+        :param slotdir: A directory to use as a base for slots
         :param run_style: Whether to run the hosts sequentially or in parallel.
         '''
         self.hosts = hosts
-        self.paths = paths
-        self.slotdir = slotdir
+        self.paths = [Path(path) for path in paths]
+        self.slotdir = Path(slotdir)
+        self.private_key = Path(private_key)
+        run_style = RunStyle(run_style)
         functions = {
             RunStyle.SEQ: seq_run,
             RunStyle.ASYNC: async_run,
@@ -53,12 +56,21 @@ class Rsync:
         :param host: The host to rsync.
         '''
         for path in self.paths:
+            log.info("Running rsync on %s, %s", host, path)
             slot = self.slotdir / host
             try:
+                cmd = sysrsync.command_maker.get_rsync_command(
+                    source=str(path),
+                    destination=str(slot),
+                    source_ssh=host,
+                    private_key=self.private_key,
+                )
+                log.debug("rsync command: %s", cmd)
                 sysrsync.run(
                     source=str(path),
                     destination=str(slot),
                     source_ssh=host,
+                    private_key=self.private_key,
                 )
                 self.status.append({'slot': slot, 'status': 'success'})
             except RsyncError as err:
