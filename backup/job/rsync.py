@@ -8,7 +8,8 @@ from typing import List
 import sysrsync
 from sysrsync.exceptions import RsyncError
 
-from ..utils import seq_run, async_run, convert_enum
+from ..utils import seq_run, async_run
+from . import Job
 
 log = getLogger(__name__)
 
@@ -17,13 +18,14 @@ class RunStyle(Enum):
     SEQ = 'seq'
     ASYNC = 'async'
 
-class Rsync:
+class Rsync(Job):
     '''A backup method to rsync data from a collection of hosts'''
     def __init__(self,
         hosts: List[str],
         paths: List[str],
         slotdir: str,
         private_key: str,
+        backend,
         run_style: str = 'seq',
     ):
         '''Create a new rsync plan.
@@ -44,25 +46,32 @@ class Rsync:
         self.run_function = functions[run_style]
         self.status = []
 
+        slots = [self.slotdir / host.split('.')[0] for host in self.hosts]
+        for slot in slots:
+            backend.ensure_slot(slot)
+
     def backup(self):
         '''Run the job'''
         functions = []
+        successful_slots = []
         for host in self.hosts:
             functions.append((self.backup_rsync_host, [host]))
-        self.run_function(functions)
+        return self.run_function(functions)
 
     def backup_rsync_host(self, host: str):
         '''Rsync a single host
         :param host: The host to rsync.
         '''
+        shortname = host.split('.')[0]
+        slot = self.slotdir / shortname
         for path in self.paths:
             log.info("Running rsync on %s, %s", host, path)
-            slot = self.slotdir / host
             try:
                 cmd = sysrsync.command_maker.get_rsync_command(
                     source=str(path),
                     destination=str(slot),
                     source_ssh=host,
+                    options=['-a'],
                     private_key=self.private_key,
                 )
                 log.debug("rsync command: %s", cmd)
@@ -70,6 +79,7 @@ class Rsync:
                     source=str(path),
                     destination=str(slot),
                     source_ssh=host,
+                    options=['-a'],
                     private_key=self.private_key,
                 )
                 self.status.append({'slot': slot, 'status': 'success'})
@@ -77,6 +87,7 @@ class Rsync:
                 log.error("Rsync error for host=%s, path=%s: %s", host, path, err)
                 self.status.append({'slot': slot, 'status': 'error', 'exception': err})
                 continue
+        return slot
 
     def restore(self):
         '''Restore job
@@ -89,3 +100,5 @@ class Rsync:
         :param snapshot: The snapshot to restore
         '''
         raise NotImplementedError()
+
+JOB = Rsync
