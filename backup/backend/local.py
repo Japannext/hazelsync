@@ -25,7 +25,9 @@ class LocalFs:
     def slot(self, name):
         '''Fetch a slot from the backend'''
         slot = self.slotdir / name
-        slot.mkdir(exist_ok=True)
+        if not slot.is_dir():
+            log.info("Creating missing directory %s", slot)
+            slot.mkdir()
         return slot
 
     def snapshot(self, slot):
