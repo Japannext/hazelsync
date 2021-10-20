@@ -3,10 +3,17 @@
 from backup.cluster import Cluster
 
 class TestCluster:
-    def test_create(self):
-        Cluster('MY_TEST', 'rsync', {
-            'hosts': ['host01', 'host02', 'host03'],
-            'paths': ['/var/log'],
-            'run_style': 'seq',
-            'slotdir': '/BACKUP/MY_TEST/slots',
-        })
+    def test_create(self, tmp_path):
+        key = tmp_path / 'backup.key'
+        key.write_text('')
+        Cluster(
+            name='MY_TEST',
+            job_type='rsync',
+            job_options={
+                'hosts': ['host01', 'host02', 'host03'],
+                'paths': ['/var/log'],
+                'slotdir': '/BACKUP/MY_TEST/slots',
+                'private_key': str(key),
+            },
+            backend_type="dummy",
+        )

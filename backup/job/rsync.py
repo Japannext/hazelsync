@@ -72,7 +72,7 @@ class Rsync(Job):
                     destination=str(slot),
                     source_ssh=host,
                     options=['-a'],
-                    private_key=self.private_key,
+                    private_key=str(self.private_key),
                 )
                 log.debug("rsync command: %s", cmd)
                 sysrsync.run(
@@ -80,7 +80,7 @@ class Rsync(Job):
                     destination=str(slot),
                     source_ssh=host,
                     options=['-a'],
-                    private_key=self.private_key,
+                    private_key=str(self.private_key),
                 )
                 self.status.append({'slot': slot, 'status': 'success'})
             except RsyncError as err:
