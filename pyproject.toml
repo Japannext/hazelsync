@@ -3,7 +3,7 @@ name = "hazelsync"
 version = "1.0.0"
 description = "Backup system"
 authors = ["Guillaume Ludinard <guillaume.ludinard@japannext.co.jp>"]
-license = "MIT"
+license = "Apache-2.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
