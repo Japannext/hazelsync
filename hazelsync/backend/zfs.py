@@ -1,58 +1,13 @@
 '''ZFS backend'''
 
-import subprocess #nosec
 from datetime import datetime
 from logging import getLogger
 from pathlib import Path
-from typing import Optional
 
 from . import Backend
+from hazelsync.utils.zfs import *
 
 log = getLogger(__name__)
-
-class ZfsError(RuntimeError):
-    '''ZFS command runtime error'''
-
-def run(cmd):
-    '''Run a command and wrap the errors'''
-    try:
-        proc = subprocess.run(cmd, #nosec
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            encoding='utf-8',
-            check=True)
-    except subprocess.CalledProcessError:
-        stderr = proc.stderr
-        cmd_line = ' '.join(cmd)
-        raise ZfsError(f"Failed to run `{cmd_line}`: {stderr}")
-    return proc
-
-def create_dataset(mount_point: Path):
-    '''Create a dataset'''
-    dataset = str(mount_point)[1:]
-    cmd = ['zfs', 'create', dataset]
-    run(cmd)
-
-def list_datasets(dataset: Optional[str] = None):
-    '''List the datasets available under a given path/name'''
-    cmd = ['zfs', 'list', '-H', '-r', '-t', 'filesystem', str(dataset)]
-    proc = run(cmd)
-    datasets = {}
-    for line in proc.stdout.strip().split('\n'):
-        name, used, avail, refer, mountpoint = line.split('\t')
-        dataset = {'name': name, 'used': used, 'avail': avail, 'refer': refer}
-        datasets[Path(mountpoint)] = dataset
-    return datasets
-
-def snapshot_dataset(mount_point: Path, properties: Optional[dict] = None):
-    '''Create a snapshot for a dataset'''
-    dataset = str(mount_point)[1:]
-    property_list = []
-    if properties:
-        for key, value in properties.items():
-            property_list += ['-o', f"{key}={value}"]
-    cmd = ['zfs', 'snapshot', '-r', dataset, *property_list]
-    run(cmd)
 
 class Zfs(Backend):
     '''Local filesystem backend for backups. Mainly there for testing and demonstration
@@ -60,28 +15,34 @@ class Zfs(Backend):
     '''
     def __init__(self, path: str):
         self.slotdir = Path(path)
+        self.datasets = zfs_list(self.slotdir)
+        self.ensure_cluster()
+
+    def ensure_cluster(self):
+        '''Ensure the cluster has its dataset created with the proper settings'''
         if not self.slotdir.is_dir():
             log.info("Creating missing dataset %s", self.slotdir)
-            create_dataset(self.slotdir)
-        self.datasets = list_datasets(self.slotdir)
+            zfs_create(self.slotdir)
 
     def ensure_slot(self, name) -> Path:
-        '''Fetch a slot from the backend'''
+        '''Ensure a given slot has its dataset created and return its path'''
         slot = self.slotdir / name
         if slot not in self.datasets:
             log.info("Creating missing dataset %s", slot)
-            create_dataset(slot)
+            zfs_create(slot)
         return slot
 
     def snapshot(self, slot):
         '''Create a ZFS snapshot.
         '''
+        if self.slotdir not in slot.parents:
+            raise Exception(f"Cannot snapshot {slot}: not a sub-directory of {self.slotdir}")
         log.info("Running ZFS snapshot for %s", slot.name)
         now = datetime.now().astimezone()
         snapshot_name = slot.name + '@' + now.strftime('%Y-%m-%dT%H:%M:%S')
         mysnapshot = self.slotdir / snapshot_name
         try:
-            snapshot_dataset(mysnapshot)
+            zfs_snapshot(mysnapshot)
         except ZfsError as err:
             log.error("Snapshot %s failed: %s", mysnapshot, err)
             raise err

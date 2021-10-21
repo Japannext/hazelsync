@@ -18,10 +18,13 @@ class Dummy:
     def ensure_slot(self, name):
         '''Dummy function to ensure the slot exists. Only logs.'''
         log.info("Ensured dummy slot existence for %s", name)
-        return self.tmp_dir / name
+        slot = self.tmp_dir / name
+        slot.mkdir(exist_ok=True)
+        return slot
 
     def snapshot(self, slot):
         '''Dummy function to snapshot. Only logs.'''
         log.info("Took dummy snapshot for slot %s", slot)
+        return slot
 
 BACKEND = Dummy

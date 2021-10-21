@@ -20,5 +20,5 @@ def backup(name):
         log.debug("Starting backup")
         cluster.backup()
     except Exception as err:
-        log.error(err)
+        log.exception(err)
         sys.exit(1)

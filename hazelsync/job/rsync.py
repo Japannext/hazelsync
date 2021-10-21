@@ -8,7 +8,7 @@ from typing import List
 import sysrsync
 from sysrsync.exceptions import RsyncError
 
-from ..utils import seq_run, async_run
+from hazelsync.utils.functions import seq_run, async_run
 from . import Job
 
 log = getLogger(__name__)

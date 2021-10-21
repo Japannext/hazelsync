@@ -1,11 +1,16 @@
 '''A job to backup hashicorp Vault'''
 
+from zipfile import ZipFile
 from urllib.parse import urlparse
 from logging import getLogger
 
 import hvac
+import requests
 
 from hazelsync.backend import Backend
+from hazelsync.utils.functions import ca_bundle
+
+CHUNK_SIZE = 1024*1024 # 1MB
 
 log = getLogger(__name__)
 
@@ -33,23 +38,42 @@ class Vault:
         url: str,
         auth: dict,
         backend: Backend,
+        ca: str = ca_bundle(),
     ):
         uri = urlparse(url)
         self.client = hvac.Client(url)
+        if ca:
+            session = requests.Session()
+            self.client.session = session
+            session.verify = ca
         method = auth.pop('method')
         auth_method = AuthMethod(method, **auth)
         auth_method.login(self.client)
 
         self.slot = backend.ensure_slot(uri.hostname)
 
+    def verify(self):
+        '''Verify the integrity o the data downloaded'''
+        snapshot_file = str(self.slot / 'vault.snapshot')
+        with ZipFile(snapshot_file) as myzip:
+            result = myzip.testzip()
+            if result is None:
+                log.info(f"Could verify CRC code for snapshot {snapshot_file}")
+            else:
+                raise Exception(f"Could not verify snapshot CRC code: {result} is corrupt")
+
     def backup(self):
         '''Backup Hashicorp Vault with the REST API'''
-        stream = self.client.sys.take_raft_snapshot()
-        stream.raise_for_status()
-        with self.slot.open('wb') as myfile:
-            for chunk in stream.iter_content(chunk_size=1024):
-                myfile.write(chunk)
-        stream.close()
+        resp = self.client.sys.take_raft_snapshot()
+        resp.raise_for_status()
+        snapshot_file = self.slot / 'vault.snapshot'
+        with snapshot_file.open('wb+') as myfile:
+            for chunk in resp.iter_content(CHUNK_SIZE, decode_unicode=False):
+                if chunk:
+                    myfile.write(chunk)
+        resp.close()
+        self.verify()
+        return [self.slot]
 
     def restore(self, snapshot):
         '''Restore Hashicorp Vault with the REST API'''
