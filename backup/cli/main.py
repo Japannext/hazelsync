@@ -6,6 +6,8 @@ import logging
 import click
 
 from .backup import backup
+from .restore import restore
+from .ssh import ssh
 from ..cluster import Cluster
 
 log_format = '%(asctime)s %(levelname)s %(name)s %(message)s'
@@ -19,3 +21,5 @@ def cli(config):
     Cluster.config_path = config
 
 cli.add_command(backup)
+cli.add_command(restore)
+cli.add_command(ssh)

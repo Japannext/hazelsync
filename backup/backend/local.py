@@ -24,7 +24,7 @@ class LocalFs(Backend):
         self.slotdir.mkdir(exist_ok=True)
         self.snapshotdir.mkdir(exist_ok=True)
 
-    def slot(self, name):
+    def ensure_slot(self, name):
         '''Fetch a slot from the backend'''
         slot = self.slotdir / name
         if not slot.is_dir():

@@ -55,8 +55,7 @@ class Cluster:
         '''Load a Cluster class from the config file'''
         config_file = cls.config_d / f"{name}.yaml"
         if config_file.is_file():
-            with open(config_file) as f:
-                config = yaml.safe_load(f.read())
+            config = yaml.safe_load(config_file.read_text())
         else:
             log.error("Could not read config file at %s", config_file)
             sys.exit(1)
@@ -69,6 +68,6 @@ class Cluster:
         for slot in slots:
             self.backend.snapshot(slot)
 
-    def restore(self, snapshot):
+    def restore(self, snapshot, options={}):
         '''Restore a snapshot on a cluster'''
-        raise NotImplementedError()
+        self.job.restore(snapshot, options)
