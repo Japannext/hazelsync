@@ -53,7 +53,6 @@ class Rsync(Job):
     def backup(self):
         '''Run the job'''
         functions = []
-        successful_slots = []
         for host in self.hosts:
             functions.append((self.backup_rsync_host, [host]))
         return self.run_function(functions)

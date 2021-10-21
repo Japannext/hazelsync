@@ -7,7 +7,7 @@ will be accepted or rejected.
 '''
 
 import os
-import subprocess
+import subprocess #nosec
 import sys
 from logging import getLogger
 from pathlib import Path
@@ -37,17 +37,20 @@ def ssh():
             raise Exception("No command provided in SSH_ORIGINAL_COMMAND")
         if cmd_line in allowed_scripts:
             log.info("Running authorized command: %s", cmd_line)
-            proc = subprocess.run(cmd)
-            sys.exit(proc.returncode)
+            proc = subprocess.run(cmd, check=True) #nosec
         elif cmd[0] == 'rsync':
             path_to_sync = Path(cmd[-1])
             for path in allowed_paths:
                 if path_to_sync == path or path_to_sync in path.parents:
-                    proc = subprocess.run(cmd)
-                    sys.exit(proc.returncode)
-            raise Unauthorized(f"Unauthorized backup path requested: {path_to_sync}")
+                    proc = subprocess.run(cmd, check=True) #nosec
+                    break
+            else:
+                raise Unauthorized(f"Unauthorized backup path requested: {path_to_sync}")
         else:
             raise Unauthorized(f"Unauthorized command: {cmd_line}")
+    except subprocess.CalledProcessError as err:
+        log.error(err)
+        sys.exit(proc.returncode)
     except Exception as err:
         log.error(err)
         sys.exit(1)

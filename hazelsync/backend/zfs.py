@@ -1,20 +1,27 @@
 '''ZFS backend'''
 
-import subprocess
-from typing import Optional
+import subprocess #nosec
 from datetime import datetime
 from logging import getLogger
 from pathlib import Path
+from typing import Optional
 
 from . import Backend
 
 log = getLogger(__name__)
 
-class ZfsError(RuntimeError): pass
+class ZfsError(RuntimeError):
+    '''ZFS command runtime error'''
 
 def run(cmd):
-    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
-    if proc.returncode != 0:
+    '''Run a command and wrap the errors'''
+    try:
+        proc = subprocess.run(cmd, #nosec
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            encoding='utf-8',
+            check=True)
+    except subprocess.CalledProcessError:
         stderr = proc.stderr
         cmd_line = ' '.join(cmd)
         raise ZfsError(f"Failed to run `{cmd_line}`: {stderr}")
@@ -37,11 +44,13 @@ def list_datasets(dataset: Optional[str] = None):
         datasets[Path(mountpoint)] = dataset
     return datasets
 
-def snapshot_dataset(mount_point: Path, properties: dict = {}):
+def snapshot_dataset(mount_point: Path, properties: Optional[dict] = None):
+    '''Create a snapshot for a dataset'''
     dataset = str(mount_point)[1:]
     property_list = []
-    for key, value in properties.items():
-        property_list += ['-o', f"{key}={value}"]
+    if properties:
+        for key, value in properties.items():
+            property_list += ['-o', f"{key}={value}"]
     cmd = ['zfs', 'snapshot', '-r', dataset, *property_list]
     run(cmd)
 
