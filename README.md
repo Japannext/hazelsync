@@ -1,6 +1,6 @@
-# Backup
+# Hazelsync
 
-Backup utilies.
+Backup/restore utilies that work in a plugin like manner.
 
 # Development
 

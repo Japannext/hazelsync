@@ -6,8 +6,8 @@ from unittest.mock import create_autospec
 from unittest.mock import call, patch
 from pathlib import Path
 
-from backup.job.rsync import Rsync
-from backup.backend.dummy import Dummy
+from hazelsync.job.rsync import Rsync
+from hazelsync.backend.dummy import Dummy
 
 @pytest.fixture(scope='function')
 def jobfix(tmp_path):

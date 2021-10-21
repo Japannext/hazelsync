@@ -1,6 +1,6 @@
 '''Unit test for the cluster'''
 
-from backup.cluster import Cluster
+from hazelsync.cluster import Cluster
 
 class TestCluster:
     def test_create(self, tmp_path):
