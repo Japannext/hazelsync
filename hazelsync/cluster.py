@@ -32,7 +32,7 @@ class Cluster:
         '''
         self.name = name
         try:
-            backend_modname = f"backup.backend.{backend_type}"
+            backend_modname = f"hazelsync.backend.{backend_type}"
             log.debug("Attempting to load %s", backend_modname)
             backend_module = import_module(backend_modname)
             backend_class = backend_module.BACKEND
@@ -41,7 +41,7 @@ class Cluster:
         except Exception as err:
             raise err
         try:
-            job_modname = f"backup.job.{job_type}"
+            job_modname = f"hazelsync.job.{job_type}"
             log.debug("Attempting to load %s", job_modname)
             job_module = import_module(job_modname)
             job_class = job_module.JOB

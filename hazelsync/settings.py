@@ -23,7 +23,7 @@ class JobSettings:
         log.debug("Loaded config from %s", config_file)
         return cls(**config)
 
-    pathd = Path('/etc/backup.d')
+    pathd = Path('/etc/hazelsync.d')
 
     def __init__(self, name):
         path = pathd / f"{name}.yaml"
@@ -35,7 +35,7 @@ class JobSettings:
 
 class GlobalSettings:
 
-    path = '/etc/backup.yaml'
+    path = '/etc/hazelsync.yaml'
 
     def __init__(self, path=cls.path):
         path = Path(path)

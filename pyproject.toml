@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "backup"
-version = "0.1.0"
+name = "hazelsync"
+version = "1.0.0"
 description = "Backup system"
 authors = ["Guillaume Ludinard <guillaume.ludinard@japannext.co.jp>"]
 license = "MIT"
@@ -19,7 +19,7 @@ pytest = "^6.2.5"
 pytest-mock = "^3.6.1"
 
 [tool.poetry.scripts]
-backup = "backup.cli.main:cli"
+hazel = "hazelsync.cli.main:cli"
 
 [build-system]
 requires = ["poetry-core"]
