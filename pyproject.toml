@@ -12,12 +12,14 @@ click = "^8.0.3"
 sysrsync = "^1.0.0"
 PyYAML = "^6.0"
 pathlib = "^1.0.1"
+hvac = "^0.11.2"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^2.11.1"
 pytest = "^6.2.5"
 pytest-mock = "^3.6.1"
 bandit = "^1.7.0"
+responses = "^0.14.0"
 
 [tool.poetry.scripts]
 hazel = "hazelsync.cli.main:cli"
