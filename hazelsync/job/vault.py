@@ -8,7 +8,6 @@ import hvac
 import requests
 from pathlib import Path
 
-from hazelsync.backend import Backend
 from hazelsync.utils.functions import ca_bundle
 
 CHUNK_SIZE = 1024*1024 # 1MB
@@ -43,9 +42,10 @@ class AuthMethod:
 class Vault:
     '''A job to backup and restore Hashicorp Vault'''
     def __init__(self,
+        name: str,
         url: str,
         auth: dict,
-        backend: Backend,
+        backend,
         ca: str = ca_bundle(),
     ):
         uri = urlparse(url)

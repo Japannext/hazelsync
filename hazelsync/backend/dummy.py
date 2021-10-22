@@ -8,7 +8,7 @@ log = getLogger(__name__)
 
 class Dummy:
     '''Dummy backend for testing purposes.'''
-    def __init__(self, tmp_dir=None):
+    def __init__(self, name:str=None, tmp_dir=None):
         log.info("Initialized Dummy backend")
         if tmp_dir:
             self.tmp_dir = tmp_dir

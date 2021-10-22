@@ -26,15 +26,6 @@ pytest-sugar = "^0.9.4"
 [tool.poetry.scripts]
 hazel = "hazelsync.cli.main:cli"
 
-[tool.poetry.plugins."hazelsync.job"]
-rsync = "hazelsync.job.rsync:Rsync"
-vault = "hazelsync.job.vault:Vault"
-
-[tool.poetry.plugins."hazelsync.backend"]
-localfs = "hazelsync.backend.local:LocalFs"
-zfs = "hazelsync.backend.zfs:Zfs"
-dummy = "hazelsync.backend.dummy:Dummy"
-
 [tool.pylint.format]
 max-line-length = 120
 

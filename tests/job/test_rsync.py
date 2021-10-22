@@ -16,6 +16,7 @@ def jobfix(tmp_path):
     slots.mkdir()
     key.write_text('')
     myjob = Rsync(
+        name='myhosts',
         hosts=['host01', 'host02', 'host03'],
         paths=[Path('/var/log')],
         run_style='seq',

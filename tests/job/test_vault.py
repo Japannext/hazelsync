@@ -23,7 +23,7 @@ class TestVault:
             status=200, body=data)
         backend = Dummy(tmp_path)
         auth = {'method': 'token', 'token': 'dummy'}
-        job = Vault('https://vault.example.com', auth, backend)
+        job = Vault('vault', 'https://vault.example.com', auth, backend)
         slot = job.backup()[0]
         snap = slot / 'vault.snapshot'
         assert snap.is_file()

@@ -9,12 +9,21 @@ from sysrsync.exceptions import RsyncError
 
 log = getLogger(__name__)
 
-class LocalFs:
+class Localfs:
     '''Local filesystem backend for backups. Mainly there for testing and demonstration
     purpose.
     '''
-    def __init__(self, basedir: Path):
-        self.basedir = basedir
+    def __init__(self,
+        name: str,
+        path: Optional[str] = None,
+        basedir: Optional[str] = None
+    ):
+        if path:
+            self.slotdir = path / 'slots'
+        elif basedir:
+            self.slotdir = basedir / name / 'slots'
+        else:
+            raise AttributeError("localfs backend need at least one of the following argument: path or basedir")
         self.slotdir = basedir / 'slots'
         self.snapshotdir = basedir / 'snapshots'
 

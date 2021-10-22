@@ -12,8 +12,17 @@ class Zfs:
     '''Local filesystem backend for backups. Mainly there for testing and demonstration
     purpose.
     '''
-    def __init__(self, path: str):
-        self.slotdir = Path(path)
+    def __init__(self,
+        name: str,
+        path: str = None,
+        basedir: str = None,
+    ):
+        if path:
+            self.slotdir = Path(path)
+        elif basedir:
+            self.slotdir = Path(basedir) / name
+        else:
+            raise AttributeError("zfs backend need at least one of the following arguments: path or basedir")
         self.datasets = zfs_list(self.slotdir)
         self.ensure_cluster()
 

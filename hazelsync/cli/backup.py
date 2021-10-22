@@ -5,7 +5,8 @@ from logging import getLogger
 
 import click
 
-from ..cluster import Cluster
+from hazelsync.cluster import Cluster
+from hazelsync.settings import Settings
 
 log = getLogger(__name__)
 
@@ -15,7 +16,8 @@ def backup(name):
     '''Create a backup for a configured cluster'''
     try:
         log.debug("Initializing cluster")
-        cluster = Cluster.from_config(name)
+        settings = Settings.parse(name)
+        cluster = Cluster(settings)
         log.debug("Cluster initialized")
         log.debug("Starting backup")
         cluster.backup()
