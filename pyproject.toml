@@ -20,9 +20,30 @@ pytest = "^6.2.5"
 pytest-mock = "^3.6.1"
 bandit = "^1.7.0"
 responses = "^0.14.0"
+pytest-spec = "^3.2.0"
+pytest-sugar = "^0.9.4"
 
 [tool.poetry.scripts]
 hazel = "hazelsync.cli.main:cli"
+
+[tool.poetry.plugins."hazelsync.job"]
+rsync = "hazelsync.job.rsync:Rsync"
+vault = "hazelsync.job.vault:Vault"
+
+[tool.poetry.plugins."hazelsync.backend"]
+localfs = "hazelsync.backend.local:LocalFs"
+zfs = "hazelsync.backend.zfs:Zfs"
+dummy = "hazelsync.backend.dummy:Dummy"
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pytest.ini_modules]
+testpaths = ["tests"]
+log_cli = true
+log_cli_level = "DEBUG"
+log_cli_format = "%(asctime)s %(name)-20s %(levelname)-8s %(message)s"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 
 [build-system]
 requires = ["poetry-core"]

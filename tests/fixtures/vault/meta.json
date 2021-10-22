@@ -1,0 +1,16 @@
+{
+  "Version":1,
+  "ID":"bolt-snapshot",
+  "Index":1234567,
+  "Term":123,
+  "Peers":null,
+  "Configuration": {
+    "Servers": [
+      {"Suffrage":0,"ID":"e74ffea4-32eb-11ec-8d3d-0242ac130003","Address":"10.0.0.11:8201"},
+      {"Suffrage":0,"ID":"f1113372-32eb-11ec-8d3d-0242ac130003","Address":"10.0.0.12:8201"},
+      {"Suffrage":0,"ID":"f52538dc-32eb-11ec-8d3d-0242ac130003","Address":"10.0.0.13:8201"}
+    ]
+  },
+  "ConfigurationIndex":123456,
+  "Size":1700000
+}

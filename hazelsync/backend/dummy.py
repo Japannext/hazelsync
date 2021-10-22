@@ -26,5 +26,3 @@ class Dummy:
         '''Dummy function to snapshot. Only logs.'''
         log.info("Took dummy snapshot for slot %s", slot)
         return slot
-
-BACKEND = Dummy

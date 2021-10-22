@@ -9,7 +9,7 @@ import yaml
 
 from .backend import Backend
 from .job import Job
-#from .utils import find_class
+from .plugin import Plugin
 
 package_name = __name__.split('.')[0]
 log = getLogger(package_name)
@@ -31,24 +31,8 @@ class Cluster:
         :param name: The name of the cluster.
         '''
         self.name = name
-        try:
-            backend_modname = f"hazelsync.backend.{backend_type}"
-            log.debug("Attempting to load %s", backend_modname)
-            backend_module = import_module(backend_modname)
-            backend_class = backend_module.BACKEND
-            log.debug("Found backend class %s", backend_class)
-            self.backend = backend_class(**backend_options)
-        except Exception as err:
-            raise err
-        try:
-            job_modname = f"hazelsync.job.{job_type}"
-            log.debug("Attempting to load %s", job_modname)
-            job_module = import_module(job_modname)
-            job_class = job_module.JOB
-            log.debug("Found job class %s", job_class)
-            self.job = job_class(**job_options, backend=self.backend)
-        except Exception as err:
-            raise err
+        self.backend = Plugin('backend').get(backend_type)(**backend_options)
+        self.job = Plugin('job').get(job_type)(**job_options, backend=self.backend)
 
     @classmethod
     def from_config(cls, name):

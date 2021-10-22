@@ -4,12 +4,11 @@ from datetime import datetime
 from logging import getLogger
 from pathlib import Path
 
-from . import Backend
 from hazelsync.utils.zfs import *
 
 log = getLogger(__name__)
 
-class Zfs(Backend):
+class Zfs:
     '''Local filesystem backend for backups. Mainly there for testing and demonstration
     purpose.
     '''
@@ -46,5 +45,3 @@ class Zfs(Backend):
         except ZfsError as err:
             log.error("Snapshot %s failed: %s", mysnapshot, err)
             raise err
-
-BACKEND = Zfs

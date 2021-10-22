@@ -7,11 +7,9 @@ from logging import getLogger
 import sysrsync
 from sysrsync.exceptions import RsyncError
 
-from . import Backend
-
 log = getLogger(__name__)
 
-class LocalFs(Backend):
+class LocalFs:
     '''Local filesystem backend for backups. Mainly there for testing and demonstration
     purpose.
     '''
@@ -47,5 +45,3 @@ class LocalFs(Backend):
         except RsyncError as err:
             log.error("Snapshot %s failed: %s", snapshot_name, err)
             raise err
-
-BACKEND = LocalFs
