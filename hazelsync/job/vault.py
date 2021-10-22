@@ -1,11 +1,12 @@
 '''A job to backup hashicorp Vault'''
 
-from zipfile import ZipFile
 from urllib.parse import urlparse
 from logging import getLogger
+from gzip import GzipFile
 
 import hvac
 import requests
+from pathlib import Path
 
 from hazelsync.backend import Backend
 from hazelsync.utils.functions import ca_bundle
@@ -13,6 +14,13 @@ from hazelsync.utils.functions import ca_bundle
 CHUNK_SIZE = 1024*1024 # 1MB
 
 log = getLogger(__name__)
+
+def verify_gzip(path: Path):
+    '''Verify the CRC of a gzip
+    :param path: Path to the gzip to verify
+    :raises BadGzipFile: Will raise this exception if the gzip is invalid
+    '''
+    GzipFile(str(path)).read()
 
 class AuthMethod:
     '''A valid authentication method with its parameters'''
@@ -52,16 +60,6 @@ class Vault:
 
         self.slot = backend.ensure_slot(uri.hostname)
 
-    def verify(self):
-        '''Verify the integrity o the data downloaded'''
-        snapshot_file = str(self.slot / 'vault.snapshot')
-        with ZipFile(snapshot_file) as myzip:
-            result = myzip.testzip()
-            if result is None:
-                log.info(f"Could verify CRC code for snapshot {snapshot_file}")
-            else:
-                raise Exception(f"Could not verify snapshot CRC code: {result} is corrupt")
-
     def backup(self):
         '''Backup Hashicorp Vault with the REST API'''
         resp = self.client.sys.take_raft_snapshot()
@@ -72,7 +70,7 @@ class Vault:
                 if chunk:
                     myfile.write(chunk)
         resp.close()
-        self.verify()
+        verify_gzip(snapshot_file)
         return [self.slot]
 
     def restore(self, snapshot):
