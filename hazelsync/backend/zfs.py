@@ -4,11 +4,14 @@ from datetime import datetime
 from logging import getLogger
 from pathlib import Path
 
+from filelock import FileLock
+
+from hazelsync.backend import Backend
 from hazelsync.utils.zfs import *
 
 log = getLogger(__name__)
 
-class Zfs:
+class Zfs(Backend):
     '''Local filesystem backend for backups. Mainly there for testing and demonstration
     purpose.
     '''
@@ -17,10 +20,10 @@ class Zfs:
         path: str = None,
         basedir: str = None,
     ):
-        if path:
-            self.slotdir = Path(path)
-        elif basedir:
+        if basedir:
             self.slotdir = Path(basedir) / name
+        elif path:
+            self.slotdir = Path(path)
         else:
             raise AttributeError("zfs backend need at least one of the following arguments: path or basedir")
         self.datasets = zfs_list(self.slotdir)
@@ -32,7 +35,7 @@ class Zfs:
             log.info("Creating missing dataset %s", self.slotdir)
             zfs_create(self.slotdir)
 
-    def ensure_slot(self, name) -> Path:
+    def ensure_slot(self, name: str) -> Path:
         '''Ensure a given slot has its dataset created and return its path'''
         slot = self.slotdir / name
         if slot not in self.datasets:
@@ -40,7 +43,7 @@ class Zfs:
             zfs_create(slot)
         return slot
 
-    def snapshot(self, slot):
+    def snapshot(self, slot: Path):
         '''Create a ZFS snapshot.
         '''
         if self.slotdir not in slot.parents:

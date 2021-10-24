@@ -3,13 +3,16 @@
 from datetime import datetime
 from pathlib import Path
 from logging import getLogger
+from typing import Optional
 
 import sysrsync
 from sysrsync.exceptions import RsyncError
 
+from hazelsync.backend import Backend
+
 log = getLogger(__name__)
 
-class Localfs:
+class Localfs(Backend):
     '''Local filesystem backend for backups. Mainly there for testing and demonstration
     purpose.
     '''

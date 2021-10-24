@@ -17,7 +17,7 @@ class TestCluster:
                 'slotdir': slots,
                 'private_key': str(key),
             },
-            'backend_type': 'dummy',
+            'backend': 'dummy',
         }
         settings = Settings('MY_TEST', cluster_settings)
         Cluster(settings)

@@ -59,19 +59,21 @@ class Vault:
         auth_method.login(self.client)
 
         self.slot = backend.ensure_slot(uri.hostname)
+        self.lock = backend.lock(self.slot)
 
     def backup(self):
         '''Backup Hashicorp Vault with the REST API'''
-        resp = self.client.sys.take_raft_snapshot()
-        resp.raise_for_status()
-        snapshot_file = self.slot / 'vault.snapshot'
-        with snapshot_file.open('wb+') as myfile:
-            for chunk in resp.iter_content(CHUNK_SIZE, decode_unicode=False):
-                if chunk:
-                    myfile.write(chunk)
-        resp.close()
-        verify_gzip(snapshot_file)
-        return [self.slot]
+        with self.lock:
+            snapshot_file = self.slot / 'vault.snapshot'
+            resp = self.client.sys.take_raft_snapshot()
+            resp.raise_for_status()
+            with snapshot_file.open('wb+') as myfile:
+                for chunk in resp.iter_content(CHUNK_SIZE, decode_unicode=False):
+                    if chunk:
+                        myfile.write(chunk)
+            resp.close()
+            verify_gzip(snapshot_file)
+            return [self.slot]
 
     def restore(self, snapshot):
         '''Restore Hashicorp Vault with the REST API'''

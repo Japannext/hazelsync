@@ -46,10 +46,11 @@ class Rsync:
         }
         self.run_function = functions[run_style]
         self.status = []
+        self.backend = backend
 
         slots = [self.slotdir / host.split('.')[0] for host in self.hosts]
         for slot in slots:
-            backend.ensure_slot(slot)
+            self.backend.ensure_slot(slot)
 
     def backup(self):
         '''Run the job'''
@@ -64,29 +65,30 @@ class Rsync:
         '''
         shortname = host.split('.')[0]
         slot = self.slotdir / shortname
-        for path in self.paths:
-            log.info("Running rsync on %s, %s", host, path)
-            try:
-                cmd = sysrsync.command_maker.get_rsync_command(
-                    source=str(path),
-                    destination=str(slot),
-                    source_ssh=host,
-                    options=['-a'],
-                    private_key=str(self.private_key),
-                )
-                log.debug("rsync command: %s", cmd)
-                sysrsync.run(
-                    source=str(path),
-                    destination=str(slot),
-                    source_ssh=host,
-                    options=['-a'],
-                    private_key=str(self.private_key),
-                )
-                self.status.append({'slot': slot, 'status': 'success'})
-            except RsyncError as err:
-                log.error("Rsync error for host=%s, path=%s: %s", host, path, err)
-                self.status.append({'slot': slot, 'status': 'error', 'exception': err})
-                continue
+        with self.backend.lock(slot):
+            for path in self.paths:
+                log.info("Running rsync on %s, %s", host, path)
+                try:
+                    cmd = sysrsync.command_maker.get_rsync_command(
+                        source=str(path),
+                        destination=str(slot),
+                        source_ssh=host,
+                        options=['-a'],
+                        private_key=str(self.private_key),
+                    )
+                    log.debug("rsync command: %s", cmd)
+                    sysrsync.run(
+                        source=str(path),
+                        destination=str(slot),
+                        source_ssh=host,
+                        options=['-a'],
+                        private_key=str(self.private_key),
+                    )
+                    self.status.append({'slot': slot, 'status': 'success'})
+                except RsyncError as err:
+                    log.error("Rsync error for host=%s, path=%s: %s", host, path, err)
+                    self.status.append({'slot': slot, 'status': 'error', 'exception': err})
+                    continue
         return slot
 
     def restore(self):

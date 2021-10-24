@@ -4,9 +4,13 @@ from logging import getLogger
 from pathlib import Path
 from tempfile import mkdtemp
 
+from filelock import FileLock
+
+from hazelsync.backend import Backend
+
 log = getLogger(__name__)
 
-class Dummy:
+class Dummy(Backend):
     '''Dummy backend for testing purposes.'''
     def __init__(self, name:str=None, tmp_dir=None):
         log.info("Initialized Dummy backend")
