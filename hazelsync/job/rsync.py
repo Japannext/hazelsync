@@ -1,15 +1,17 @@
 '''Rsync style backup'''
 
+import subprocess
 from logging import getLogger
 from enum import Enum
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 import sysrsync
 from sysrsync.exceptions import RsyncError
 
 from hazelsync.utils.functions import seq_run, async_run
-from . import Job
+
+Script = Union[str, dict]
 
 log = getLogger(__name__)
 
@@ -27,6 +29,9 @@ class Rsync:
         slotdir: str,
         private_key: str,
         backend,
+        user: str = 'root',
+        pre_scripts: List[Script] = [],
+        post_scripts: List[Script] = [],
         run_style: str = 'seq',
     ):
         '''Create a new rsync plan.
@@ -47,6 +52,10 @@ class Rsync:
         self.run_function = functions[run_style]
         self.status = []
         self.backend = backend
+        self.user = user
+        self.scripts = {}
+        self.scripts['pre'] = pre_scripts
+        self.scripts['post'] = post_scripts
 
         slots = [self.slotdir / host.split('.')[0] for host in self.hosts]
         for slot in slots:
@@ -59,6 +68,19 @@ class Rsync:
             functions.append((self.backup_rsync_host, [host]))
         return self.run_function(functions)
 
+    def run_scripts(self, stype: str, host: str):
+        '''Run a collection of scripts on a given host'''
+        for script in self.scripts[stype]:
+            if isinstance(script, str):
+                data = {'cmd': script}
+            elif isinstance(script, dict):
+                data = script
+            script_cmd = data['cmd']
+            timeout = data.get('timeout', 120)
+            cmd = ['ssh', '-l', self.user, host, script_cmd]
+            subprocess.run(cmd, shell=False, timeout=timeout,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+
     def backup_rsync_host(self, host: str):
         '''Rsync a single host
         :param host: The host to rsync.
@@ -66,29 +88,30 @@ class Rsync:
         shortname = host.split('.')[0]
         slot = self.slotdir / shortname
         with self.backend.lock(slot):
+            self.run_scripts('pre', host)
             for path in self.paths:
                 log.info("Running rsync on %s, %s", host, path)
                 try:
-                    cmd = sysrsync.command_maker.get_rsync_command(
-                        source=str(path),
-                        destination=str(slot),
-                        source_ssh=host,
-                        options=['-a'],
-                        private_key=str(self.private_key),
-                    )
+                    options = {
+                        'source': str(path),
+                        'destination': str(slot),
+                        'source_ssh': host,
+                        'options': ['-a'],
+                        'private_key': str(self.private_key),
+                    }
+                    cmd = sysrsync.command_maker.get_rsync_command(**options)
                     log.debug("rsync command: %s", cmd)
-                    sysrsync.run(
-                        source=str(path),
-                        destination=str(slot),
-                        source_ssh=host,
-                        options=['-a'],
-                        private_key=str(self.private_key),
-                    )
+                    sysrsync.run(**options)
                     self.status.append({'slot': slot, 'status': 'success'})
                 except RsyncError as err:
                     log.error("Rsync error for host=%s, path=%s: %s", host, path, err)
                     self.status.append({'slot': slot, 'status': 'error', 'exception': err})
                     continue
+        errors = [s for s in self.status if s['status'] == 'error']
+        if errors:
+            errors_str = ', '.join(map(lambda s: f"{s['slot']}: {s['exception']}", errors))
+            raise Exception(errors_str)
+        self.run_scripts('post', host)
         return slot
 
     def restore(self):
@@ -102,5 +125,3 @@ class Rsync:
         :param snapshot: The snapshot to restore
         '''
         raise NotImplementedError()
-
-JOB = Rsync
