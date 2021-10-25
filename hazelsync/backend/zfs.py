@@ -26,8 +26,8 @@ class Zfs(Backend):
             self.slotdir = Path(path)
         else:
             raise AttributeError("zfs backend need at least one of the following arguments: path or basedir")
-        self.datasets = zfs_list(self.slotdir)
         self.ensure_cluster()
+        self.datasets = zfs_list(self.slotdir)
 
     def ensure_cluster(self):
         '''Ensure the cluster has its dataset created with the proper settings'''
