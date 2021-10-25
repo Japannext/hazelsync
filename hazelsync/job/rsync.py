@@ -26,7 +26,6 @@ class Rsync:
         name: str,
         hosts: List[str],
         paths: List[str],
-        basedir: str,
         private_key: str,
         backend,
         user: str = 'root',
@@ -41,7 +40,6 @@ class Rsync:
         '''
         self.hosts = hosts
         self.paths = [Path(path) for path in paths]
-        self.slotdir = Path(basedir) / name
         self.private_key = Path(private_key)
         run_style = RunStyle(run_style)
         functions = {
@@ -56,10 +54,7 @@ class Rsync:
         self.scripts['pre'] = pre_scripts
         self.scripts['post'] = post_scripts
 
-        slots = [self.slotdir / host.split('.')[0] for host in self.hosts]
-        self.backend.ensure_slot(self.slotdir)
-        for slot in slots:
-            self.backend.ensure_slot(slot)
+        self.slots = {host.split('.')[0]: self.backend.ensure_slot(host.split('.')[0]) for host in self.hosts}
 
     def backup(self):
         '''Run the job'''
@@ -86,7 +81,7 @@ class Rsync:
         :param host: The host to rsync.
         '''
         shortname = host.split('.')[0]
-        slot = self.slotdir / shortname
+        slot = self.slots[shortname]
         with self.backend.lock(slot):
             self.run_scripts('pre', host)
             for path in self.paths:
@@ -96,7 +91,7 @@ class Rsync:
                         'source': str(path),
                         'destination': str(slot),
                         'source_ssh': host,
-                        'options': ['-a'],
+                        'options': ['-a', '-R', '-A', '--numeric-ids'],
                         'private_key': str(self.private_key),
                     }
                     cmd = sysrsync.command_maker.get_rsync_command(**options)

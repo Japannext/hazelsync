@@ -10,12 +10,14 @@ import os
 import subprocess #nosec
 import sys
 from logging import getLogger
+from logging.handlers import SysLogHandler
 from pathlib import Path
 
 import click
 import yaml
 
-log = getLogger(__name__)
+log = getLogger('hazel-ssh')
+log.addHandler(SysLogHandler(address='/dev/log'))
 
 CONFIG_FILE = Path('/etc/hazelsync-ssh.yaml')
 
@@ -41,6 +43,7 @@ def ssh():
         elif cmd[0] == 'rsync':
             path_to_sync = Path(cmd[-1])
             for path in allowed_paths:
+                path = Path(path)
                 if path_to_sync == path or path_to_sync in path.parents:
                     proc = subprocess.run(cmd, check=True) #nosec
                     break
