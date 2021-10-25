@@ -17,7 +17,7 @@ import yaml
 
 log = getLogger(__name__)
 
-CONFIG_FILE = Path('/etc/backup-client.yaml')
+CONFIG_FILE = Path('/etc/hazelsync-ssh.yaml')
 
 class Unauthorized(RuntimeError):
     '''An exception to reject unauthorized commands'''

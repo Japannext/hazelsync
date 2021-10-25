@@ -22,4 +22,3 @@ def cli(config):
 
 cli.add_command(backup)
 cli.add_command(restore)
-cli.add_command(ssh)
