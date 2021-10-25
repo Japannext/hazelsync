@@ -26,7 +26,7 @@ class Rsync:
         name: str,
         hosts: List[str],
         paths: List[str],
-        slotdir: str,
+        basedir: str,
         private_key: str,
         backend,
         user: str = 'root',
@@ -37,12 +37,11 @@ class Rsync:
         '''Create a new rsync plan.
         :param hosts: A list of hostnames to rsync to.
         :param paths: A list of path that will need to be rsynced from the target hosts.
-        :param slotdir: A directory to use as a base for slots
         :param run_style: Whether to run the hosts sequentially or in parallel.
         '''
         self.hosts = hosts
         self.paths = [Path(path) for path in paths]
-        self.slotdir = Path(slotdir)
+        self.slotdir = Path(basedir) / name
         self.private_key = Path(private_key)
         run_style = RunStyle(run_style)
         functions = {
@@ -58,6 +57,7 @@ class Rsync:
         self.scripts['post'] = post_scripts
 
         slots = [self.slotdir / host.split('.')[0] for host in self.hosts]
+        self.backend.ensure_slot(self.slotdir)
         for slot in slots:
             self.backend.ensure_slot(slot)
 

@@ -19,7 +19,7 @@ def jobfix(tmp_path):
         hosts=['host01', 'host02', 'host03'],
         paths=[Path('/var/log')],
         run_style='seq',
-        slotdir=Path(slots),
+        basedir=Path(slots),
         private_key=str(key),
         backend=Dummy(),
     )

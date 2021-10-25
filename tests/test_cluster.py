@@ -14,7 +14,7 @@ class TestCluster:
             'options': {
                 'hosts': ['host01', 'host02', 'host03'],
                 'paths': ['/var/log'],
-                'slotdir': slots,
+                'basedir': slots,
                 'private_key': str(key),
             },
             'backend': 'dummy',
