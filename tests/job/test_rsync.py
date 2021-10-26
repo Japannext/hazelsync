@@ -39,7 +39,7 @@ class TestRsync:
             pre_scripts=['/usr/local/bin/my_custom_script arg1'], private_key=private_key, backend=backend)
         with patch('sysrsync.run'), patch('subprocess.run') as subprocess:
             job.backup()
-            subprocess.assert_called_with(['ssh', '-l', 'root', 'host01', '/usr/local/bin/my_custom_script arg1'],
+            subprocess.assert_called_with(['ssh', '-l', 'root', '-i', private_key, 'host01', '/usr/local/bin/my_custom_script arg1'],
                 check=True, shell=False, stderr=-1, stdout=-1, timeout=120)
 
     def test_post_scripts(self, private_key, backend):
@@ -47,7 +47,7 @@ class TestRsync:
             post_scripts=['/usr/local/bin/my_custom_script arg1'], private_key=private_key, backend=backend)
         with patch('sysrsync.run') as sysrsync, patch('subprocess.run') as subprocess:
             job.backup()
-            subprocess.assert_called_with(['ssh', '-l', 'root', 'host01', '/usr/local/bin/my_custom_script arg1'],
+            subprocess.assert_called_with(['ssh', '-l', 'root', '-i', private_key, 'host01', '/usr/local/bin/my_custom_script arg1'],
                 check=True, shell=False, stderr=-1, stdout=-1, timeout=120)
 
     def test_excludes(self, private_key, backend):

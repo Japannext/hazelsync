@@ -80,7 +80,7 @@ class Rsync:
                 data = script
             script_cmd = data['cmd']
             timeout = data.get('timeout', 120)
-            cmd = ['ssh', '-l', self.user, host, script_cmd]
+            cmd = ['ssh', '-l', self.user, '-i', str(self.private_key), host, script_cmd]
             subprocess.run(cmd, shell=False, timeout=timeout,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
 
