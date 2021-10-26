@@ -9,8 +9,6 @@ from typing import List, Union
 import sysrsync
 from sysrsync.exceptions import RsyncError
 
-from hazelsync.utils.functions import seq_run, async_run
-
 Script = Union[str, dict]
 
 log = getLogger(__name__)
@@ -43,12 +41,7 @@ class Rsync:
         self.hosts = hosts
         self.paths = [Path(path) for path in paths]
         self.private_key = Path(private_key)
-        run_style = RunStyle(run_style)
-        functions = {
-            RunStyle.SEQ: seq_run,
-            RunStyle.ASYNC: async_run,
-        }
-        self.run_function = functions[run_style]
+        self.run_style = RunStyle(run_style)
         self.status = []
         self.backend = backend
         self.user = user
@@ -65,10 +58,18 @@ class Rsync:
 
     def backup(self):
         '''Run the job'''
-        functions = []
-        for host in self.hosts:
-            functions.append((self.backup_rsync_host, [host]))
-        return self.run_function(functions)
+        slots = []
+        if self.run_style == RunStyle.SEQ:
+            for host in self.hosts:
+                try:
+                    slot = self.backup_rsync_host(host)
+                    slots.append(slot)
+                except Exception as err:
+                    log.error(err)
+                    continue
+        elif self.run_style == RunStyle.ASYNC:
+            raise NotImplementedError()
+        return slots
 
     def run_scripts(self, stype: str, host: str):
         '''Run a collection of scripts on a given host'''

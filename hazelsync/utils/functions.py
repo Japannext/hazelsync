@@ -3,17 +3,6 @@
 import os
 from pathlib import Path
 
-def seq_run(functions):
-    '''Run a list of functions sequentially'''
-    results = []
-    for func, args in functions:
-        results.append(func(*args))
-    return results
-
-def async_run(functions):
-    '''Run a list of functions in async'''
-    raise NotImplementedError()
-
 CA_BUNDLE_PATHS = [
     '/etc/ssl/certs/ca-certificates.crt', # Debian / Ubuntu / Gentoo
     '/etc/pki/tls/certs/ca-bundle.crt', # RHEL 6
