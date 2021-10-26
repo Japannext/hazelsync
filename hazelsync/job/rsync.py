@@ -29,6 +29,8 @@ class Rsync:
         private_key: str,
         backend,
         user: str = 'root',
+        includes: List[str] = [],
+        excludes: List[str] = [],
         pre_scripts: List[Script] = [],
         post_scripts: List[Script] = [],
         run_style: str = 'seq',
@@ -53,6 +55,11 @@ class Rsync:
         self.scripts = {}
         self.scripts['pre'] = pre_scripts
         self.scripts['post'] = post_scripts
+        self.rsync_options = ['-a', '-R', '-A', '--numeric-ids']
+        for inc in includes:
+            self.rsync_options += ['--include', inc]
+        for exc in excludes:
+            self.rsync_options += ['--exclude', exc]
 
         self.slots = {host.split('.')[0]: self.backend.ensure_slot(host.split('.')[0]) for host in self.hosts}
 
@@ -91,7 +98,7 @@ class Rsync:
                         'source': str(path),
                         'destination': str(slot),
                         'source_ssh': host,
-                        'options': ['-a', '-R', '-A', '--numeric-ids'],
+                        'options': self.rsync_options,
                         'private_key': str(self.private_key),
                     }
                     cmd = sysrsync.command_maker.get_rsync_command(**options)
