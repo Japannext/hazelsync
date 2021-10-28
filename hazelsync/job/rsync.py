@@ -4,10 +4,9 @@ import subprocess
 from logging import getLogger
 from enum import Enum
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Optional
 
-import sysrsync
-from sysrsync.exceptions import RsyncError
+from hazelsync.utils.rsync import rsync_run, RsyncError
 
 Script = Union[str, dict]
 
@@ -27,10 +26,10 @@ class Rsync:
         private_key: str,
         backend,
         user: str = 'root',
-        includes: List[str] = [],
-        excludes: List[str] = [],
-        pre_scripts: List[Script] = [],
-        post_scripts: List[Script] = [],
+        includes: Optional[List[str]] = None,
+        excludes: Optional[List[str]] = None,
+        pre_scripts: Optional[List[Script]] = None,
+        post_scripts: Optional[List[Script]] = None,
         run_style: str = 'seq',
     ):
         '''Create a new rsync plan.
@@ -46,13 +45,11 @@ class Rsync:
         self.backend = backend
         self.user = user
         self.scripts = {}
-        self.scripts['pre'] = pre_scripts
-        self.scripts['post'] = post_scripts
+        self.scripts['pre'] = pre_scripts or []
+        self.scripts['post'] = post_scripts or []
         self.rsync_options = ['-a', '-R', '-A', '--numeric-ids']
-        for inc in includes:
-            self.rsync_options += ['--include', inc]
-        for exc in excludes:
-            self.rsync_options += ['--exclude', exc]
+        self.includes = includes
+        self.excludes = excludes
 
         self.slots = {host.split('.')[0]: self.backend.ensure_slot(host.split('.')[0]) for host in self.hosts}
 
@@ -95,19 +92,17 @@ class Rsync:
             for path in self.paths:
                 log.info("Running rsync on %s, %s", host, path)
                 try:
-                    options = {
-                        'source': str(path),
-                        'destination': str(slot),
-                        'source_ssh': host,
-                        'options': self.rsync_options,
-                        'private_key': str(self.private_key),
-                    }
-                    cmd = sysrsync.command_maker.get_rsync_command(**options)
-                    log.debug("rsync command: %s", cmd)
-                    sysrsync.run(**options)
+                    rsync_run(
+                        source=path,
+                        destination=slot,
+                        source_host=host,
+                        options=self.rsync_options,
+                        includes=self.includes,
+                        excludes=self.excludes,
+                        private_key=self.private_key,
+                    )
                     self.status.append({'slot': slot, 'status': 'success'})
                 except RsyncError as err:
-                    log.error("Rsync error for host=%s, path=%s: %s", host, path, err)
                     self.status.append({'slot': slot, 'status': 'error', 'exception': err})
                     continue
         errors = [s for s in self.status if s['status'] == 'error']

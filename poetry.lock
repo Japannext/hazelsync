@@ -431,17 +431,6 @@ importlib-metadata = {version = ">=1.7.0", markers = "python_version < \"3.8\""}
 pbr = ">=2.0.0,<2.1.0 || >2.1.0"
 
 [[package]]
-name = "sysrsync"
-version = "1.0.0"
-description = "Simple and safe python wrapper for calling system rsync"
-category = "main"
-optional = false
-python-versions = ">=3.6,<4.0"
-
-[package.dependencies]
-toml = ">=0.10.0,<0.11.0"
-
-[[package]]
 name = "termcolor"
 version = "1.1.0"
 description = "ANSII Color formatting for output in terminal."
@@ -708,10 +697,6 @@ smmap = [
 stevedore = [
     {file = "stevedore-3.5.0-py3-none-any.whl", hash = "sha256:a547de73308fd7e90075bb4d301405bebf705292fa90a90fc3bcf9133f58616c"},
     {file = "stevedore-3.5.0.tar.gz", hash = "sha256:f40253887d8712eaa2bb0ea3830374416736dc8ec0e22f5a65092c1174c44335"},
-]
-sysrsync = [
-    {file = "sysrsync-1.0.0-py3-none-any.whl", hash = "sha256:a7277c84517b7fd6fa9a346af13f826cb5a793a05df2a36edd6ade66c0c678d7"},
-    {file = "sysrsync-1.0.0.tar.gz", hash = "sha256:d814fedd96d83cf8349201fb87dc54fd5e7ff571d9afac1675aba2f9f77f147e"},
 ]
 termcolor = [
     {file = "termcolor-1.1.0.tar.gz", hash = "sha256:1d6d69ce66211143803fbc56652b41d73b4a400a2891d7bf7a1cdf4c02de613b"},
