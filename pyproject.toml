@@ -25,7 +25,7 @@ pytest-sugar = "^0.9.4"
 
 [tool.poetry.scripts]
 hazel = "hazelsync.cli.main:cli"
-hazel-ssh = "hazelsync.cli.ssh:ssh"
+hazel-ssh = "hazelsync.cli.ssh_helper:ssh_helper"
 
 [tool.pylint.format]
 max-line-length = 120

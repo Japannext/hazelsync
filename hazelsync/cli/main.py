@@ -5,10 +5,9 @@ import logging
 
 import click
 
-from .backup import backup
-from .restore import restore
-from .ssh import ssh
-from ..cluster import Cluster
+from hazelsync.cli.backup import backup
+from hazelsync.cli.restore import restore
+from hazelsync.cluster import Cluster
 
 log_format = '%(asctime)s %(levelname)s %(name)s %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=log_format)
