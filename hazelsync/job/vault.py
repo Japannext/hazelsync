@@ -39,7 +39,7 @@ class AuthMethod:
                 log.error("Auth method %s not supported by python hvac library", self.method)
                 raise err
 
-class Vault:
+class VaultJob:
     '''A job to backup and restore Hashicorp Vault'''
     def __init__(self,
         name: str,
@@ -78,5 +78,3 @@ class Vault:
     def restore(self, snapshot):
         '''Restore Hashicorp Vault with the REST API'''
         pass
-
-JOB = Vault

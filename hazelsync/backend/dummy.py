@@ -10,7 +10,7 @@ from hazelsync.backend import Backend
 
 log = getLogger(__name__)
 
-class Dummy(Backend):
+class DummyBackend(Backend):
     '''Dummy backend for testing purposes.'''
     def __init__(self, name:str=None, tmp_dir=None):
         log.info("Initialized Dummy backend")

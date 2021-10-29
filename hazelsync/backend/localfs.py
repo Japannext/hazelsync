@@ -12,7 +12,7 @@ from hazelsync.backend import Backend
 
 log = getLogger(__name__)
 
-class Localfs(Backend):
+class LocalfsBackend(Backend):
     '''Local filesystem backend for backups. Mainly there for testing and demonstration
     purpose.
     '''

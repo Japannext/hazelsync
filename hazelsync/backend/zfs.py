@@ -11,7 +11,7 @@ from hazelsync.utils.zfs import *
 
 log = getLogger(__name__)
 
-class Zfs(Backend):
+class ZfsBackend(Backend):
     '''Local filesystem backend for backups. Mainly there for testing and demonstration
     purpose.
     '''

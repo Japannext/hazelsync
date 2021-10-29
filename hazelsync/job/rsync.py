@@ -17,7 +17,7 @@ class RunStyle(Enum):
     SEQ = 'seq'
     ASYNC = 'async'
 
-class Rsync:
+class RsyncJob:
     '''A backup method to rsync data from a collection of hosts'''
     def __init__(self,
         name: str,
