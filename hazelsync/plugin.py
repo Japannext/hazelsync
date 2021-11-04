@@ -13,10 +13,10 @@ class PluginType(Enum):
     '''Type of plugin and their entrypoint name'''
     JOB = 'job'
     BACKEND = 'backend'
-    SSH_HELPER = 'ssh_helper'
+    SSH_HELPER = 'ssh'
 
 class Plugin:
-    '''A plugin (job, backend, ssh_helper)'''
+    '''A plugin (job, backend, ssh)'''
     def __init__(self, plugin_type: str):
         '''
         :param plugin_type: The type of plugin (ssh, backend or job).

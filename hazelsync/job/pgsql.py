@@ -8,6 +8,9 @@ from hazelsync.utils.rsync import rsync_run, RsyncError
 
 log = getLogger(__name__)
 
+PRE_SCRIPT = '''/usr/bin/psql -c "SELECT pg_backup_start('hazelsync', true);"'''
+POST_SCRIPT = '''/usr/bin/psql -c "SELECT pg_backup_stop();"'''
+
 class PgsqlJob(RsyncJob):
     '''Subclass of rsync job to backup PostgreSQL with the WAL archive method.'''
     def __init__(self,
@@ -18,8 +21,8 @@ class PgsqlJob(RsyncJob):
         **kwargs):
         self.waldir = Path(waldir)
         super().__init__(paths=[Path(datadir)], excludes=[self.waldir], **kwargs)
-        self.scripts['pre'] = ['''/usr/bin/psql -c "SELECT pg_backup_start('hazelsync', true);"''']
-        self.scripts['final'] = ['''/usr/bin/psql -c "SELECT pg_backup_stop();"''']
+        self.scripts['pre'] = [PRE_SCRIPT]
+        self.scripts['final'] = [POST_SCRIPT]
         self.stream_options = []
         if delete_wal:
             self.stream_options += ['--remove-source-files']

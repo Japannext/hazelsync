@@ -22,10 +22,10 @@ from hazelsync.ssh_helper import Authorized, Unauthorized
 log = getLogger('hazel-ssh-helper')
 log.addHandler(SysLogHandler(address='/dev/log'))
 
-CONFIG_FILE = Path('/etc/hazelsync-ssh-helper.yaml')
+CONFIG_FILE = Path('/etc/hazelsync-ssh.yaml')
 
 @click.command()
-def ssh_helper():
+def ssh():
     '''A ssh client command to restrict the rights of the backup server'''
     try:
         cmd_line = os.environ.get('SSH_ORIGINAL_COMMAND', '')
@@ -34,7 +34,7 @@ def ssh_helper():
         plugin_name = config.get('plugin')
 
         plugin_config = config.get(plugin_name, {})
-        plugin = Plugin('ssh_helper').get(plugin_name)(**plugin_config)
+        plugin = Plugin('ssh').get(plugin_name)(**plugin_config)
 
         if getattr(plugin, 'run'):
             plugin.run(cmd_line)

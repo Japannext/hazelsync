@@ -4,7 +4,8 @@ import subprocess
 from logging import getLogger
 from pathlib import Path
 
-from hazelsync.ssh_helper import SshHelper, Unauthorized
+from hazelsync.ssh import SshHelper, Unauthorized
+from hazelsync.ssh
 
 log = getLogger(__name__)
 
