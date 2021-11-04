@@ -41,7 +41,7 @@ def rsync_run(
     if ssh_options:
         ssh_string = 'ssh ' + ' '.join(ssh_options)
         options += ['--rsh', ssh_string]
-    cmd = ['rsync', *options, source, destination]
+    cmd = ['/usr/bin/rsync', *options, source, destination]
     log.debug('Running command: %s', shlex.quote(' '.join(cmd)))
     execute(cmd)
 

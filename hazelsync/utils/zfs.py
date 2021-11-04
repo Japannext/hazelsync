@@ -28,12 +28,12 @@ def run(cmd):
 def zfs_create(mount_point: Path):
     '''Create a dataset'''
     dataset = str(mount_point)[1:]
-    cmd = ['zfs', 'create', dataset]
+    cmd = ['/usr/bin/zfs', 'create', dataset]
     run(cmd)
 
 def zfs_get(name: str, prop: str):
     '''Get a given property of an object'''
-    cmd = ['zfs', 'get', prop, name, '-H']
+    cmd = ['/usr/bin/zfs', 'get', prop, name, '-H']
     proc = run(cmd)
     line = proc.stdout.strip().split('\n')[0]
     _, _, value, _ = line.split('\t')
@@ -41,7 +41,7 @@ def zfs_get(name: str, prop: str):
 
 def zfs_set(name: str, prop: str, value: str):
     '''Set the properties of an object'''
-    cmd = ['zfs', 'set', name, f"{prop}={value}"]
+    cmd = ['/usr/bin/zfs', 'set', name, f"{prop}={value}"]
     prop = run(cmd)
 
 def zfs_ensure(name: str, prop: str, should: str):
@@ -52,7 +52,7 @@ def zfs_ensure(name: str, prop: str, should: str):
 
 def zfs_list(dataset: Optional[str] = None):
     '''List the datasets available under a given path/name'''
-    cmd = ['zfs', 'list', '-H', '-r', '-t', 'filesystem', str(dataset)]
+    cmd = ['/usr/bin/zfs', 'list', '-H', '-r', '-t', 'filesystem', str(dataset)]
     proc = run(cmd)
     datasets = {}
     for line in proc.stdout.strip().split('\n'):
@@ -68,5 +68,5 @@ def zfs_snapshot(mount_point: Path, properties: Optional[dict] = None):
     if properties:
         for key, value in properties.items():
             property_list += ['-o', f"{key}={value}"]
-    cmd = ['zfs', 'snapshot', '-r', dataset, *property_list]
+    cmd = ['/usr/bin/zfs', 'snapshot', '-r', dataset, *property_list]
     run(cmd)
