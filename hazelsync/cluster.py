@@ -43,6 +43,10 @@ class Cluster:
         for slot in slots:
             self.backend.snapshot(slot)
 
+    def stream(self):
+        '''Stream some data to make backup faster'''
+        self.job.stream()
+
     def restore(self, snapshot):
         '''Restore a snapshot on a cluster'''
         self.config_logging('restore')
