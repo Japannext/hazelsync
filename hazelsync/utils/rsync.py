@@ -1,5 +1,6 @@
 '''Utils for running rsync commands'''
 
+import os
 import shlex
 import subprocess
 from logging import getLogger
@@ -7,6 +8,19 @@ from pathlib import Path
 from typing import Optional, List
 
 log = getLogger(__name__)
+
+# Cronjob don't have PATH by default, so let's have sane defaults.
+DEFAULT_PATH = ':'.join([
+    '/bin',
+    '/sbin',
+    '/usr/bin',
+    '/usr/local/bin',
+    '/usr/local/sbin',
+    '/usr/sbin',
+])
+# Do not change it with the default value of th get method.
+# We need to use DEFAULT_PATH even when PATH return empty string.
+PATH = os.environ.get('PATH') or DEFAULT_PATH
 
 class RsyncError(RuntimeError):
     def __init__(self, err):
@@ -41,14 +55,14 @@ def rsync_run(
     if ssh_options:
         ssh_string = 'ssh ' + ' '.join(ssh_options)
         options += ['--rsh', ssh_string]
-    cmd = ['/usr/bin/rsync', *options, source, destination]
+    cmd = ['rsync', *options, source, destination]
     log.debug('Running command: %s', shlex.quote(' '.join(cmd)))
     execute(cmd)
 
 def execute(cmd):
     '''Execute a command and log properly'''
     try:
-        proc = subprocess.run(cmd, shell=False, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.run(cmd, shell=False, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=dict(PATH=PATH))
         for line in proc.stdout.split(b'\n'):
             log.debug(line)
     except subprocess.CalledProcessError as err:

@@ -1,5 +1,6 @@
 '''Test for rsync module'''
 
+import os
 import pytest
 from unittest.mock import create_autospec
 from unittest.mock import call, patch
@@ -7,6 +8,7 @@ from pathlib import Path
 
 from hazelsync.job.rsync import RsyncJob
 from hazelsync.backend.dummy import DummyBackend
+from hazelsync.utils.rsync import DEFAULT_PATH
 
 @pytest.fixture(scope='function')
 def backend(tmp_path):
@@ -23,6 +25,7 @@ class TestRsync:
         job = RsyncJob(name='myhosts', hosts=['host01'], paths=['/var/log'], private_key=private_key, backend=backend)
         assert isinstance(job, RsyncJob)
 
+    @patch('hazelsync.job.rsync.PATH', DEFAULT_PATH)
     def test_backup(self, private_key, backend):
         job = RsyncJob(name='myhosts', hosts=['host01', 'host02', 'host03'], paths=['/var/log'], private_key=private_key, backend=backend)
         with patch('hazelsync.job.rsync.rsync_run') as rsync:
@@ -35,19 +38,21 @@ class TestRsync:
                 call(source_host='host03', destination=backend.tmp_dir/'host03', **args),
             ])
 
+    @patch('hazelsync.job.rsync.PATH', DEFAULT_PATH)
     def test_pre_scripts(self, private_key, backend):
         job = RsyncJob(name='myhosts', hosts=['host01'], paths=['/var/log'],
             pre_scripts=['/usr/local/bin/my_custom_script arg1'], private_key=private_key, backend=backend)
         with patch('hazelsync.job.rsync.rsync_run'), patch('subprocess.run') as subprocess:
             job.backup()
-            subprocess.assert_called_with(['ssh', '-l', 'root', '-i', str(private_key), 'host01', '/usr/local/bin/my_custom_script arg1'], check=True, shell=False, stderr=-1, stdout=-1, timeout=120)
+            subprocess.assert_called_with(['ssh', '-l', 'root', '-i', str(private_key), 'host01', '/usr/local/bin/my_custom_script arg1'], check=True, shell=False, stderr=-1, stdout=-1, timeout=120, env=dict(PATH=DEFAULT_PATH))
 
+    @patch('hazelsync.job.rsync.PATH', DEFAULT_PATH)
     def test_post_scripts(self, private_key, backend):
         job = RsyncJob(name='myhosts', hosts=['host01'], paths=['/var/log'],
             post_scripts=['/usr/local/bin/my_custom_script arg1'], private_key=private_key, backend=backend)
         with patch('hazelsync.job.rsync.rsync_run'), patch('subprocess.run') as subprocess:
             job.backup()
-            subprocess.assert_called_with(['ssh', '-l', 'root', '-i', str(private_key), 'host01', '/usr/local/bin/my_custom_script arg1'], check=True, shell=False, stderr=-1, stdout=-1, timeout=120)
+            subprocess.assert_called_with(['ssh', '-l', 'root', '-i', str(private_key), 'host01', '/usr/local/bin/my_custom_script arg1'], check=True, shell=False, stderr=-1, stdout=-1, timeout=120, env=dict(PATH=DEFAULT_PATH))
 
     def test_excludes(self, private_key, backend):
         job = RsyncJob(name='myhosts', hosts=['host01'], paths=['/var/log'],

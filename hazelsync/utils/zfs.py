@@ -7,6 +7,8 @@ import subprocess #nosec
 from pathlib import Path
 from typing import Optional
 
+from hazelsync.utils.rsync import PATH
+
 class ZfsError(RuntimeError):
     '''ZFS command runtime error'''
 
@@ -17,7 +19,8 @@ def run(cmd):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding='utf-8',
-            check=True)
+            check=True,
+            env=dict(PATH=PATH))
     except subprocess.CalledProcessError as proc:
         stderr = proc.stderr
         cmd_line = ' '.join(cmd)
@@ -28,7 +31,7 @@ def run(cmd):
 def zfs_create(mount_point: Path):
     '''Create a dataset'''
     dataset = str(mount_point)[1:]
-    cmd = ['/usr/bin/zfs', 'create', dataset]
+    cmd = ['zfs', 'create', dataset]
     run(cmd)
 
 def zfs_get(name: str, prop: str):
@@ -41,7 +44,7 @@ def zfs_get(name: str, prop: str):
 
 def zfs_set(name: str, prop: str, value: str):
     '''Set the properties of an object'''
-    cmd = ['/usr/bin/zfs', 'set', name, f"{prop}={value}"]
+    cmd = ['zfs', 'set', name, f"{prop}={value}"]
     prop = run(cmd)
 
 def zfs_ensure(name: str, prop: str, should: str):
@@ -52,7 +55,7 @@ def zfs_ensure(name: str, prop: str, should: str):
 
 def zfs_list(dataset: Optional[str] = None):
     '''List the datasets available under a given path/name'''
-    cmd = ['/usr/bin/zfs', 'list', '-H', '-r', '-t', 'filesystem', str(dataset)]
+    cmd = ['zfs', 'list', '-H', '-r', '-t', 'filesystem', str(dataset)]
     proc = run(cmd)
     datasets = {}
     for line in proc.stdout.strip().split('\n'):
@@ -68,5 +71,5 @@ def zfs_snapshot(mount_point: Path, properties: Optional[dict] = None):
     if properties:
         for key, value in properties.items():
             property_list += ['-o', f"{key}={value}"]
-    cmd = ['/usr/bin/zfs', 'snapshot', '-r', dataset, *property_list]
+    cmd = ['zfs', 'snapshot', '-r', dataset, *property_list]
     run(cmd)

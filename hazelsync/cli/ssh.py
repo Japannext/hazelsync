@@ -33,7 +33,7 @@ def ssh():
         config = yaml.safe_load(CONFIG_FILE.read_text(encoding='utf-8'))
         plugin_name = config.get('plugin')
 
-        plugin_config = config.get(plugin_name, {})
+        plugin_config = config.get('options', {})
         plugin = Plugin('ssh').get(plugin_name)(**plugin_config)
 
         if getattr(plugin, 'run'):

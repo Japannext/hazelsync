@@ -8,8 +8,8 @@ from hazelsync.utils.rsync import rsync_run, RsyncError
 
 log = getLogger(__name__)
 
-PRE_SCRIPT = '''/usr/bin/psql -c "SELECT pg_backup_start('hazelsync', true);"'''
-POST_SCRIPT = '''/usr/bin/psql -c "SELECT pg_backup_stop();"'''
+PRE_SCRIPT = '''psql -c "SELECT pg_backup_start('hazelsync', true);"'''
+POST_SCRIPT = '''psql -c "SELECT pg_backup_stop();"'''
 
 class PgsqlJob(RsyncJob):
     '''Subclass of rsync job to backup PostgreSQL with the WAL archive method.'''
