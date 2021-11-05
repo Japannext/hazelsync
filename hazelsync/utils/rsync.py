@@ -35,6 +35,7 @@ def rsync_run(
     includes: Optional[List[str]] = None,
     excludes: Optional[List[str]] = None,
     ssh_options: Optional[List[str]] = None,
+    user: str = 'root',
     private_key: Optional[Path] = None,
 ):
     '''Run a sanitized rsync command'''
@@ -42,7 +43,7 @@ def rsync_run(
         options = []
     if ssh_options is None:
         ssh_options = []
-    source = f"{source_host}:{source}/" if source_host else f"{source}/"
+    source = f"{user}@{source_host}:{source}/" if source_host else f"{source}/"
     destination = f"{dest_host}:{destination}/" if dest_host else f"{destination}/"
     if includes is not None:
         for inc in includes:
@@ -56,7 +57,7 @@ def rsync_run(
         ssh_string = 'ssh ' + ' '.join(ssh_options)
         options += ['--rsh', ssh_string]
     cmd = ['rsync', *options, source, destination]
-    log.debug('Running command: %s', shlex.quote(' '.join(cmd)))
+    log.debug('Running command: %s', cmd)
     execute(cmd)
 
 def execute(cmd):

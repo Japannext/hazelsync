@@ -1,5 +1,6 @@
 '''Resources used by SSH helpers scripts'''
 
+import subprocess #nosec
 from abc import abstractmethod
 
 class Unauthorized(RuntimeError):
@@ -15,8 +16,8 @@ class SshHelper:
         :param cmd_line: The command to check the authorization.
         :raises hazelsync.ssh_helper.Unauthorized: Raised if the command is unauthorized.
         '''
+        raise NotImplementedError('Derive from SshHelper but did not implement authorize method')
 
-    @abstractmethod
     def run(self, cmd_line: str):
         '''
         Check and run the cmd_line. Define this method instead of
@@ -24,3 +25,5 @@ class SshHelper:
         :param cmd_line: The command to check the authorization and run.
         :raises hazelsync.ssh_helper.Unauthorized: Raised if the command is unauthorized.
         '''
+        self.authorize(cmd_line)
+        subprocess.run(cmd_line, check=True, shell=True) #nosec

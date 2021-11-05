@@ -31,7 +31,7 @@ class TestRsync:
         with patch('hazelsync.job.rsync.rsync_run') as rsync:
             job.backup()
             options = ['-a', '-R', '-A', '--numeric-ids']
-            args = {'source': Path('/var/log'), 'options': options, 'includes': None, 'excludes': None, 'private_key': private_key}
+            args = {'source': Path('/var/log'), 'options': options, 'includes': None, 'excludes': None, 'private_key': private_key, 'user': 'root'}
             rsync.assert_has_calls([
                 call(source_host='host01', destination=backend.tmp_dir/'host01', **args),
                 call(source_host='host02', destination=backend.tmp_dir/'host02', **args),
@@ -60,5 +60,5 @@ class TestRsync:
         with patch('hazelsync.job.rsync.rsync_run') as rsync:
             job.backup()
             options = ['-a', '-R', '-A', '--numeric-ids']
-            args = {'source': Path('/var/log'), 'options': options, 'includes': None, 'excludes': ['/var/log/secure*', '/var/log/audit*'], 'private_key': private_key}
+            args = {'source': Path('/var/log'), 'options': options, 'includes': None, 'excludes': ['/var/log/secure*', '/var/log/audit*'], 'private_key': private_key, 'user': 'root'}
             rsync.assert_called_with(source_host='host01', destination=backend.tmp_dir/'host01', **args)

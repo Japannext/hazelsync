@@ -2,27 +2,35 @@
 A script that execute on the client to restrict the backup server access rights
 to improve security.
 Upon accessing the client through SSH, the SSH_ORIGINAL_COMMAND will be inspected
-and depending on the local configuration in /etc/backup-client.yaml, the command
+and depending on the local configuration in /etc/hazelsync-ssh.yaml, the command
 will be accepted or rejected.
 '''
 
 import os
 import subprocess #nosec
 import sys
+import logging
 from logging import getLogger
 from logging.handlers import SysLogHandler
 from pathlib import Path
 
 import click
+import click_logging
 import yaml
 
-from hazelsync import Plugin
-from hazelsync.ssh_helper import Authorized, Unauthorized
+from hazelsync.plugin import Plugin
+from hazelsync.ssh import Unauthorized
 
-log = getLogger('hazel-ssh-helper')
-log.addHandler(SysLogHandler(address='/dev/log'))
+log = getLogger(__name__)
+#log.addHandler(SysLogHandler(address='/dev/log'))
+logging.basicConfig(stream=sys.stdout)
+click_logging.basic_config(log)
 
 CONFIG_FILE = Path('/etc/hazelsync-ssh.yaml')
+
+def get_config(path: Path = CONFIG_FILE) -> dict:
+    '''Fetch the configuration file'''
+    return yaml.safe_load(path.read_text(encoding='utf-8'))
 
 @click.command()
 def ssh():
@@ -30,21 +38,19 @@ def ssh():
     try:
         cmd_line = os.environ.get('SSH_ORIGINAL_COMMAND', '')
         log.debug("Receiving command: %s", cmd_line)
-        config = yaml.safe_load(CONFIG_FILE.read_text(encoding='utf-8'))
+        config = get_config()
+        log.debug("Loading SSH helper plugin")
         plugin_name = config.get('plugin')
-
         plugin_config = config.get('options', {})
-        plugin = Plugin('ssh').get(plugin_name)(**plugin_config)
 
-        if getattr(plugin, 'run'):
-            plugin.run(cmd_line)
+        log.debug("Initializing SSH helper plugin")
+        plugin = Plugin('ssh').get(plugin_name)
+        log.debug("Loaded plugin %s", plugin)
+        helper = plugin(plugin_config)
 
-        elif getattr(plugin, 'authorize'):
-            plugin.authorize(cmd_line)
-            subprocess.run(cmd_line, check=True, shell=True) #nosec
+        log.debug("Running SSH helper plugin")
+        helper.run(cmd_line)
 
     except Unauthorized as err:
         log.error("Unauthorized: %s", err)
         sys.exit(1)
-    except subprocess.CalledProcessError as err:
-        log.error("Failed to run command %s: %s", err.cmd, err.stderr)

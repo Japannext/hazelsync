@@ -31,10 +31,10 @@ class TestRsync:
         patch('subprocess.run') as subprocess:
             job.backup()
             options = ['-a', '-R', '-A', '--numeric-ids']
-            args = {'source': Path('/data/pgsql'), 'options': options, 'includes': None, 'excludes': [Path('/data/wal')], 'private_key': private_key}
+            args = {'source': Path('/data/pgsql'), 'options': options, 'includes': None, 'excludes': [Path('/data/wal')], 'private_key': private_key, 'user': 'root'}
             rsync.assert_called_with(source_host='master01', destination=backend.tmp_dir/'master01', **args)
-            backup_pre_script = '''psql -c "SELECT pg_backup_start('hazelsync', true);"'''
-            backup_post_script = '''psql -c "SELECT pg_backup_stop();"'''
+            backup_pre_script = '''psql -c "SELECT pg_start_backup('hazelsync', true);"'''
+            backup_post_script = '''psql -c "SELECT pg_stop_backup();"'''
             print(subprocess.mock_calls)
             calls = [
                 call(['ssh', '-l', 'root', '-i', str(private_key), 'master01', backup_pre_script], check=True, shell=False, stderr=-1, stdout=-1, timeout=120, env=dict(PATH=DEFAULT_PATH)),
@@ -48,5 +48,5 @@ class TestRsync:
         with patch('hazelsync.job.pgsql.rsync_run') as rsync:
             job.stream()
             options = ['-a', '-R', '-A', '--numeric-ids', '--remove-source-files']
-            args = {'source': Path('/data/wal'), 'options': options, 'private_key': private_key}
+            args = {'source': Path('/data/wal'), 'options': options, 'private_key': private_key, 'user': 'root'}
             rsync.assert_called_with(source_host='master01', destination=backend.tmp_dir/'master01', **args)

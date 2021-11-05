@@ -77,6 +77,7 @@ class RsyncJob:
                 data = script
             script_cmd = data['cmd']
             timeout = data.get('timeout', 120)
+            log.debug("Running %s script: %s", stype, script_cmd)
             cmd = ['ssh', '-l', self.user, '-i', str(self.private_key), host, script_cmd]
             subprocess.run(cmd, shell=False, timeout=timeout, env=dict(PATH=PATH),
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
@@ -99,6 +100,7 @@ class RsyncJob:
                         options=self.rsync_options,
                         includes=self.includes,
                         excludes=self.excludes,
+                        user=self.user,
                         private_key=self.private_key,
                     )
                     self.status.append({'slot': slot, 'status': 'success'})

@@ -8,8 +8,8 @@ from hazelsync.utils.rsync import rsync_run, RsyncError
 
 log = getLogger(__name__)
 
-PRE_SCRIPT = '''psql -c "SELECT pg_backup_start('hazelsync', true);"'''
-POST_SCRIPT = '''psql -c "SELECT pg_backup_stop();"'''
+PRE_SCRIPT = '''psql -c "SELECT pg_start_backup('hazelsync', true);"'''
+POST_SCRIPT = '''psql -c "SELECT pg_stop_backup();"'''
 
 class PgsqlJob(RsyncJob):
     '''Subclass of rsync job to backup PostgreSQL with the WAL archive method.'''
@@ -30,7 +30,7 @@ class PgsqlJob(RsyncJob):
 
     def backup_rsync_host(self, host: str):
         try:
-            super().backup_rsync_host(host)
+            return super().backup_rsync_host(host)
         finally:
             self.run_scripts('final', host)
 
@@ -53,6 +53,7 @@ class PgsqlJob(RsyncJob):
                     destination=slot,
                     source_host=host,
                     options=self.rsync_options+self.stream_options,
+                    user=self.user,
                     private_key=self.private_key,
                 )
             except RsyncError as err:
