@@ -28,13 +28,12 @@ class Cluster:
         path = Path(f'/var/log/hazelsync/{self.name}')
         path.mkdir(exist_ok=True, parents=True)
         now = datetime.now().strftime('%Y-%m-%dT%H%M%S')
-        formatter = Formatter('%(asctime)s %(levelname)s: %(message)s')
-        handler = FileHandler(path / f"{now}-{action}.log")
         filename = path / f"{now}-{action}.log"
+        formatter = Formatter('%(asctime)s %(levelname)s: %(message)s')
+        handler = FileHandler(filename)
         handler.setLevel(DEBUG)
         handler.setFormatter(formatter)
         log.addHandler(handler)
-        basicConfig(filename=filename, format='%(asctime)s %(levelname)s: %(message)s', level=DEBUG)
 
     def backup(self):
         '''Run the backup of a cluster'''
@@ -45,6 +44,15 @@ class Cluster:
 
     def stream(self):
         '''Stream some data to make backup faster'''
+        path = Path(f"/var/log/hazelsync/{self.name}")
+        path.mkdir(exist_ok=True, parents=True)
+        today = datetime.now().strftime('%Y-%m-%d')
+        filename = path / f"{today}-stream.log"
+        formatter = Formatter('%(asctime)s %(levelname)s: %(message)s')
+        handler = FileHandler(filename)
+        handler.setLevel(DEBUG)
+        handler.setFormatter(formatter)
+        log.addHandler(handler)
         self.job.stream()
 
     def restore(self, snapshot):
