@@ -1,3 +1,10 @@
+## v1.2.0
+
+### Features
+
+* Support for PostgreSQL backups by doing rsync with WAL "streaming" (more frequent cronjobs)
+* Better handling of plugins for hazel-ssh script: now any plugin can define a behavior for hazel-ssh
+
 ## v1.1.0
 
 ### Features
