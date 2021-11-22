@@ -23,22 +23,23 @@ from hazelsync.ssh import Unauthorized
 
 log = getLogger(__name__)
 #log.addHandler(SysLogHandler(address='/dev/log'))
-logging.basicConfig(stream=sys.stdout)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 click_logging.basic_config(log)
 
-CONFIG_FILE = Path('/etc/hazelsync-ssh.yaml')
+CONFIG_FILE = '/etc/hazelsync-ssh.yaml'
 
-def get_config(path: Path = CONFIG_FILE) -> dict:
+def get_config(path: Path) -> dict:
     '''Fetch the configuration file'''
     return yaml.safe_load(path.read_text(encoding='utf-8'))
 
 @click.command()
-def ssh():
+@click.option('--config', '-c', default=CONFIG_FILE, help='The config file to use.', show_default=True)
+def ssh(config):
     '''A ssh client command to restrict the rights of the backup server'''
     try:
         cmd_line = os.environ.get('SSH_ORIGINAL_COMMAND', '')
         log.debug("Receiving command: %s", cmd_line)
-        config = get_config()
+        config = get_config(Path(config))
         log.debug("Loading SSH helper plugin")
         plugin_name = config.get('plugin')
         plugin_config = config.get('options', {})
