@@ -64,16 +64,22 @@ class VaultJob:
     def backup(self):
         '''Backup Hashicorp Vault with the REST API'''
         with self.lock:
-            snapshot_file = self.slot / 'vault.snapshot'
-            resp = self.client.sys.take_raft_snapshot()
-            resp.raise_for_status()
-            with snapshot_file.open('wb+') as myfile:
-                for chunk in resp.iter_content(CHUNK_SIZE, decode_unicode=False):
-                    if chunk:
-                        myfile.write(chunk)
-            resp.close()
-            verify_gzip(snapshot_file)
-            return [self.slot]
+            try:
+                slot = {'slot': self.slot}
+                snapshot_file = self.slot / 'vault.snapshot'
+                resp = self.client.sys.take_raft_snapshot()
+                resp.raise_for_status()
+                with snapshot_file.open('wb+') as myfile:
+                    for chunk in resp.iter_content(CHUNK_SIZE, decode_unicode=False):
+                        if chunk:
+                            myfile.write(chunk)
+                resp.close()
+                verify_gzip(snapshot_file)
+                slot['status'] = 'success'
+            except Exception as err:
+                log.error(err)
+                slot['status'] = 'failure'
+            return [slot]
 
     def restore(self, snapshot):
         '''Restore Hashicorp Vault with the REST API'''

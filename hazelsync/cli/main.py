@@ -8,6 +8,7 @@ import click
 from hazelsync.cli.backup import backup
 from hazelsync.cli.restore import restore
 from hazelsync.cli.stream import stream
+from hazelsync.cli.nagios import nagios
 from hazelsync.cluster import Cluster
 
 log_format = '%(asctime)s %(levelname)s %(name)s %(message)s'
@@ -23,3 +24,4 @@ def cli(config):
 cli.add_command(backup)
 cli.add_command(restore)
 cli.add_command(stream)
+cli.add_command(nagios)

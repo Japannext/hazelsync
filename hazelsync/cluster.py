@@ -6,6 +6,7 @@ from pathlib import Path
 
 from hazelsync.plugin import Plugin
 from hazelsync.settings import Settings
+from hazelsync.reports import Report
 
 log = getLogger('hazelsync')
 
@@ -22,6 +23,7 @@ class Cluster:
         self.name = settings.name
         self.backend = Plugin('backend').get(backend_type)(name=settings.name, **backend_options)
         self.job = Plugin('job').get(job_type)(name=settings.name, **job_options, backend=self.backend)
+        self.job_type = job_type
 
     def config_logging(self, action: str):
         '''Configure the logging'''
@@ -37,10 +39,31 @@ class Cluster:
 
     def backup(self):
         '''Run the backup of a cluster'''
+        start_time = datetime.now()
         self.config_logging('backup')
         slots = self.job.backup()
         for slot in slots:
-            self.backend.snapshot(slot)
+            if slot['status'] == 'success':
+                self.backend.snapshot(slot['slot'])
+        if all(slot['status'] == 'failure' for slot in slots):
+            status = 'failure'
+        elif any(slot['status'] == 'failure' for slot in slots):
+            status = 'partial'
+        elif all(slot['status'] == 'success' for slot in slots):
+            status = 'success'
+        else:
+            status = 'unknown'
+        end_time = datetime.now()
+        report = Report(
+            cluster=self.name,
+            job_name=self.job_type,
+            job_type='backup',
+            start_time=start_time,
+            end_time=end_time,
+            status=status,
+            slots=slots,
+        )
+        report.write()
 
     def stream(self):
         '''Stream some data to make backup faster'''

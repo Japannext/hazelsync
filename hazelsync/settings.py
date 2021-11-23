@@ -19,6 +19,10 @@ class SettingError(AttributeError):
 
 class Settings:
     '''A class to manage the settings'''
+
+    globals = Path(DEFAULT_SETTINGS)
+    clusterdir = Path(CLUSTER_DIRECTORY)
+
     def __init__(self,
         name: str,
         job_config: dict,
@@ -31,23 +35,35 @@ class Settings:
         log.debug("Global config: %s", self.global_config)
 
     @staticmethod
-    def parse(name: str,
-        global_settings: Path = DEFAULT_SETTINGS,
-        clusterdir: Path = CLUSTER_DIRECTORY,
-    ):
+    def list() -> dict:
+        '''List the backup cluster found in the settings'''
+        settings = {}
+        for path in Settings.clusterdir.glob('*.yaml'):
+            cluster = path.stem
+            settings[cluster] = {'path': path}
+            try:
+                #config = Settings.parse(cluster)
+                #settings[cluster]['config'] = config
+                settings[cluster]['config_status'] = 'success'
+            except Exception as err:
+                log.error(err)
+                settings[cluster]['config'] = {}
+                settings[cluster]['config_status'] = 'failure'
+        return settings
+
+    @staticmethod
+    def parse(name: str):
         '''Parse the settings
         :param name: The name of the job
         :param global_settings: Path to the global settings
         :param clusterdir: Path to the cluster drop-in directory
         '''
-        global_settings = Path(global_settings)
-        clusterdir = Path(clusterdir)
-        if global_settings.is_file():
-            log.debug("Reading %s", global_settings)
-            glob = yaml.safe_load(global_settings.read_text(encoding='utf-8'))
+        if Settings.globals.is_file():
+            log.debug("Reading %s", Settings.globals)
+            glob = yaml.safe_load(Settings.globals.read_text(encoding='utf-8'))
         else:
             glob = {}
-        jobfile = clusterdir / f"{name}.yaml"
+        jobfile = Settings.clusterdir / f"{name}.yaml"
         log.debug("Reading %s", jobfile)
         jobconfig = yaml.safe_load(jobfile.read_text(encoding='utf-8'))
         return Settings(name, jobconfig, glob)

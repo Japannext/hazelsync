@@ -58,12 +58,16 @@ class RsyncJob:
         slots = []
         if self.run_style == RunStyle.SEQ:
             for host in self.hosts:
+                shortname = host.split('.')[0]
+                slot = {'slot': self.slots[shortname]}
                 try:
-                    slot = self.backup_rsync_host(host)
-                    slots.append(slot)
+                    self.backup_rsync_host(host)
+                    slot['status'] = 'success'
                 except Exception as err:
                     log.error(err)
-                    continue
+                    slot['status'] = 'failure'
+                    slot['logs'] = [str(err).split("\n")]
+                slots.append(slot)
         elif self.run_style == RunStyle.ASYNC:
             raise NotImplementedError()
         return slots
