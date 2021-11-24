@@ -6,6 +6,8 @@ from enum import Enum
 from pathlib import Path
 from typing import List, Union, Optional
 
+from filelock import Timeout
+
 from hazelsync.utils.rsync import rsync_run, RsyncError, PATH
 
 Script = Union[str, dict]
@@ -91,15 +93,17 @@ class RsyncJob:
         :param host: The host to rsync.
         '''
         shortname = host.split('.')[0]
-        slot = self.slots[shortname]
-        with self.backend.lock(slot):
+        slot_path = self.slots[shortname]
+        exceptions = []
+        with self.backend.lock(slot_path):
             self.run_scripts('pre', host)
             for path in self.paths:
                 log.info("Running rsync on %s, %s", host, path)
+                slot = {'slot': shortname}
                 try:
                     rsync_run(
                         source=path,
-                        destination=slot,
+                        destination=slot_path,
                         source_host=host,
                         options=self.rsync_options,
                         includes=self.includes,
@@ -107,14 +111,21 @@ class RsyncJob:
                         user=self.user,
                         private_key=self.private_key,
                     )
-                    self.status.append({'slot': slot, 'status': 'success'})
+                    slot['status'] = 'success'
                 except RsyncError as err:
-                    self.status.append({'slot': slot, 'status': 'error', 'exception': err})
-                    continue
-        errors = [s for s in self.status if s['status'] == 'error']
-        if errors:
-            errors_str = ', '.join(map(lambda s: f"{s['slot']}: {s['exception']}", errors))
-            raise Exception(errors_str)
+                    slot['status'] = 'failure'
+                    slot['logs'] = str(err)
+                    exceptions.append(err)
+                except Timeout as err:
+                    slot['status'] = 'locked'
+                    exceptions.append(err)
+                except Exception as err:
+                    slot['status'] = 'unknown'
+                    slot['logs'] = str(err)
+                    exceptions.append(err)
+                self.status.append(slot)
+        if exceptions:
+            raise Exception(exceptions)
         self.run_scripts('post', host)
         return slot
 

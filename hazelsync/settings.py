@@ -33,6 +33,7 @@ class Settings:
         log.debug("Job config: %s", self.job_config)
         self.global_config = global_config or {}
         log.debug("Global config: %s", self.global_config)
+        self.prometheus = self.global_config.get('prometheus')
 
     @staticmethod
     def list() -> dict:

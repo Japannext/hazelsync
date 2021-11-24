@@ -3,6 +3,8 @@
 from logging import getLogger
 from pathlib import Path
 
+from filelock import Timeout
+
 from hazelsync.job.rsync import RsyncJob
 from hazelsync.utils.rsync import rsync_run, RsyncError
 
@@ -38,8 +40,22 @@ class PgsqlJob(RsyncJob):
         '''A function to execute very regularly to avoid long backup time.
         In PostgreSQL case, we will rsync the WAL logs.
         '''
+        slots = []
         for host in self.hosts:
-            self.stream_host(host)
+            slot = {'slot': host.split('.')[0]}
+            try:
+                self.stream_host(host)
+            except RsyncError as err:
+                log.error("Failed to rsync (stream) for %s, %s: %s", host, self.waldir, err)
+                slot['status'] = 'failure'
+                slot['logs'] = str(err)
+            except Timeout:
+                slot['status'] = 'locked'
+            except Exception as err:
+                slot['status'] = 'unknown'
+                slot['logs'] = str(err)
+            slots.append(slot)
+        return slots
 
     def stream_host(self, host: str):
         '''Fetch the stream data for one host'''
@@ -47,14 +63,11 @@ class PgsqlJob(RsyncJob):
         slot = self.slots[shortname]
         with self.backend.lock(slot, self.stream_timeout):
             log.info("Running rsync (stream) on %s, %s", host, self.waldir)
-            try:
-                rsync_run(
-                    source=self.waldir,
-                    destination=slot,
-                    source_host=host,
-                    options=self.rsync_options+self.stream_options,
-                    user=self.user,
-                    private_key=self.private_key,
-                )
-            except RsyncError as err:
-                log.error("Failed to rsync (stream) for %s, %s: %s", host, self.waldir, err)
+            rsync_run(
+                source=self.waldir,
+                destination=slot,
+                source_host=host,
+                options=self.rsync_options+self.stream_options,
+                user=self.user,
+                private_key=self.private_key,
+            )

@@ -4,11 +4,25 @@ from logging import getLogger, FileHandler, DEBUG, Formatter, basicConfig
 from datetime import datetime
 from pathlib import Path
 
+from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
+
 from hazelsync.plugin import Plugin
 from hazelsync.settings import Settings
 from hazelsync.reports import Report
 
 log = getLogger('hazelsync')
+
+def merge_statuses(slots) -> str:
+    '''Return the general status given a list of slots'''
+    if all(slot['status'] == 'failure' for slot in slots):
+        status = 'failure'
+    elif any(slot['status'] == 'failure' for slot in slots):
+        status = 'partial'
+    elif all(slot['status'] == 'success' for slot in slots):
+        status = 'success'
+    else:
+        status = 'unknown'
+    return status
 
 class Cluster:
     '''Class used to represent the cluster configuration for backup
@@ -21,16 +35,30 @@ class Cluster:
         backend_type, backend_options = settings.backend()
 
         self.name = settings.name
+        self.prometheus = settings.prometheus
         self.backend = Plugin('backend').get(backend_type)(name=settings.name, **backend_options)
         self.job = Plugin('job').get(job_type)(name=settings.name, **job_options, backend=self.backend)
         self.job_type = job_type
+
+        self.registry = CollectorRegistry()
+        self.metrics = {
+            'runtime': Gauge('runtime', 'Time the job took',
+                ['action', 'cluster', 'job'], registry=self.registry),
+            'job_status': Gauge('job_status', 'Status of the job',
+                ['action', 'cluster', 'job'], registry=self.registry),
+            'slot_status': Gauge('slot_status', 'Status of each slot',
+                ['action', 'cluster', 'job', 'slot'], registry=self.registry),
+        }
 
     def config_logging(self, action: str):
         '''Configure the logging'''
         path = Path(f'/var/log/hazelsync/{self.name}')
         path.mkdir(exist_ok=True, parents=True)
-        now = datetime.now().strftime('%Y-%m-%dT%H%M%S')
-        filename = path / f"{now}-{action}.log"
+        if action in ['stream']:
+            now = datetime.now().strftime('%Y-%m-%d')
+        else:
+            now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+        filename = path / f"{action}-{now}.log"
         formatter = Formatter('%(asctime)s %(levelname)s: %(message)s')
         handler = FileHandler(filename)
         handler.setLevel(DEBUG)
@@ -39,21 +67,17 @@ class Cluster:
 
     def backup(self):
         '''Run the backup of a cluster'''
-        start_time = datetime.now()
         self.config_logging('backup')
-        slots = self.job.backup()
-        for slot in slots:
-            if slot['status'] == 'success':
-                self.backend.snapshot(slot['slot'])
-        if all(slot['status'] == 'failure' for slot in slots):
-            status = 'failure'
-        elif any(slot['status'] == 'failure' for slot in slots):
-            status = 'partial'
-        elif all(slot['status'] == 'success' for slot in slots):
-            status = 'success'
-        else:
-            status = 'unknown'
+        start_time = datetime.now()
+        labels = ('backup', self.name, self.job_type)
+        with self.metrics['runtime'].labels(*labels).time():
+            slots = self.job.backup()
+        with self.metrics['runtime'].labels('snapshot', self.name, self.job_type).time():
+            for slot in slots:
+                if slot['status'] == 'success':
+                    self.backend.snapshot(slot['slot'])
         end_time = datetime.now()
+        status = merge_statuses(slots)
         report = Report(
             cluster=self.name,
             job_name=self.job_type,
@@ -64,19 +88,28 @@ class Cluster:
             slots=slots,
         )
         report.write()
+        self.metrics['job_status'].labels(*labels).set(status)
+        for slot in slots:
+            self.metrics['slot_status'].labels(*labels, slot['slot']).set(slot['status'])
+        self.publish_metrics()
 
     def stream(self):
         '''Stream some data to make backup faster'''
-        path = Path(f"/var/log/hazelsync/{self.name}")
-        path.mkdir(exist_ok=True, parents=True)
-        today = datetime.now().strftime('%Y-%m-%d')
-        filename = path / f"{today}-stream.log"
-        formatter = Formatter('%(asctime)s %(levelname)s: %(message)s')
-        handler = FileHandler(filename)
-        handler.setLevel(DEBUG)
-        handler.setFormatter(formatter)
-        log.addHandler(handler)
-        self.job.stream()
+        self.config_logging('stream')
+        labels = ('stream', self.name, self.job_type)
+        with self.metrics['runtime'].labels(*labels).time():
+            slots = self.job.stream()
+        slots = self.job.stream()
+        status = merge_statuses(slots)
+        self.metrics['job_status'].labels(*labels).set(status)
+        for slot in slots:
+            self.metrics['slot_status'].labels(*labels, slot['slot']).set(slot['status'])
+        self.publish_metrics()
+
+    def publish_metrics(self, action):
+        '''Send metrics to prometheus if configured'''
+        if self.prometheus:
+            push_to_gateway(self.prometheus, job='hazelsync', registry=self.registry)
 
     def restore(self, snapshot):
         '''Restore a snapshot on a cluster'''
