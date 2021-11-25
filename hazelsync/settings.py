@@ -7,8 +7,6 @@ from typing import Optional
 
 import yaml
 
-log = getLogger('hazelsync')
-
 DEFAULT_SETTINGS = '/etc/hazelsync.yaml'
 CLUSTER_DIRECTORY = '/etc/hazelsync.d'
 
@@ -29,7 +27,9 @@ DEFAULT_LOGGING = {
         },
     },
     'loggers': {
-        'hazelsync': ['console', 'syslog'],
+        'hazelsync': {
+            'handlers': ['console', 'syslog'],
+        },
     },
 }
 
@@ -39,41 +39,58 @@ class SettingError(AttributeError):
         log.error("Configuration error (in %s): %s", job, message)
         super().__init__(message)
 
-class Settings:
-    '''A class to manage the settings'''
+class GlobalSettings:
+    '''A class to manage the global settings of hazelsync'''
+    def __init__(self, path=DEFAULT_SETTINGS):
+        path = Path(path)
+        text = path.read_text(encoding='utf-8')
+        data = yaml.safe_load(text)
+        self.default_backend = data.get('default_backend', 'localfs')
+        self.prometheus = data.get('prometheus')
+        self.job_options = data.get('job_options')
+        self.backend_options = data.get('backend_options')
+        self.logging = data.get('logging', DEFAULT_LOGGING)
+        self.log = self.logger()
 
-    globals = Path(DEFAULT_SETTINGS)
-    clusterdir = Path(CLUSTER_DIRECTORY)
+    def logger(self):
+        '''Setup logging and return the logger'''
+        logging.config.dictConfig(self.logging)
+        log = getLogger('hazelsync')
+        log.debug('Logger initialized')
+        return log
 
-    def __init__(self,
-        name: str,
-        job_config: dict,
-        global_config: Optional[dict] = None,
-    ):
+    def job(self, job_type: str) -> dict:
+        '''Return defaults for a job type'''
+        return self.job_options.get(job_type, {})
+
+    def backend(self, backend_type: str) -> dict:
+        '''Return defaults for a backend type'''
+        return self.backend_options.get(backend_type, {})
+
+class ClusterSettings:
+    '''A class to manage the settings of a cluster'''
+    directory = Path(CLUSTER_DIRECTORY)
+
+    def __init__(self, name, global_path=DEFAULT_SETTINGS):
         self.name = name
-        self.job_config = job_config
-        log.debug("Job config: %s", self.job_config)
-        self.global_config = global_config or {}
-        log.debug("Global config: %s", self.global_config)
-        self.prometheus = self.global_config.get('prometheus')
+        self.globals = GlobalSettings(global_path)
+        path = ClusterSettings.directory / f"{name}.yaml"
+        text = path.read_text(encoding='utf-8')
+        data = yaml.safe_load(text)
 
-    def setup_logging(self, action: str):
-        '''Setup logging depending on the action taken'''
-        myconfig = DEFAULT_LOGGING
-        config = self.global_config.get(logging, {})
-        myconfig.update(config)
-        logging.config.dictConfig(myconfig)
+        self.job_type = data.get('job')
+        self.job_options = data.get('options', {})
+        self.backend_type = data.get('backend') or self.globals.default_backend
+        self.backend_options = data.get('backend_options', {})
 
     @staticmethod
     def list() -> dict:
         '''List the backup cluster found in the settings'''
         settings = {}
-        for path in Settings.clusterdir.glob('*.yaml'):
+        for path in ClusterSettings.directory.glob('*.yaml'):
             cluster = path.stem
             settings[cluster] = {'path': path}
             try:
-                #config = Settings.parse(cluster)
-                #settings[cluster]['config'] = config
                 settings[cluster]['config_status'] = 'success'
             except Exception as err:
                 log.error(err)
@@ -81,37 +98,14 @@ class Settings:
                 settings[cluster]['config_status'] = 'failure'
         return settings
 
-    @staticmethod
-    def parse(name: str):
-        '''Parse the settings
-        :param name: The name of the job
-        :param global_settings: Path to the global settings
-        :param clusterdir: Path to the cluster drop-in directory
-        '''
-        if Settings.globals.is_file():
-            log.debug("Reading %s", Settings.globals)
-            glob = yaml.safe_load(Settings.globals.read_text(encoding='utf-8'))
-        else:
-            glob = {}
-        jobfile = Settings.clusterdir / f"{name}.yaml"
-        log.debug("Reading %s", jobfile)
-        jobconfig = yaml.safe_load(jobfile.read_text(encoding='utf-8'))
-        return Settings(name, jobconfig, glob)
-
     def job(self):
-        '''Merge and return the type and configuration related to the job'''
-        job_type = self.job_config.get('job')
-        if not job_type:
-            raise SettingError(self.name, 'Attribute "job" missing')
-        defaults = self.global_config.get('job_options', {}).get(job_type, {})
-        options = self.job_config.get('options', {})
-        return job_type, {**defaults, **options}
+        '''Return the job options (merged with defaults)'''
+        defaults = self.globals.job(self.job_type)
+        options = self.job_options
+        return self.job_type, {**defaults, **options}
 
     def backend(self):
-        '''Merge and return the type and configuration related to the backend'''
-        backend_type = self.job_config.get('backend') or self.global_config.get('default_backend')
-        if not backend_type:
-            raise SettingError(self.name, 'No backend defined. Define "backend" in the job configuration, or a "default_backend" in the global configuration')
-        defaults = self.global_config.get('backend_options', {}).get(backend_type, {})
-        options = self.job_config.get('backend_options', {})
-        return backend_type, {**defaults, **options}
+        '''Return the backend option (merged with defaults)'''
+        defaults = self.globals.backend(self.backend_type)
+        options = self.backend_options
+        return self.backend_type, {**defaults, **options}

@@ -8,7 +8,7 @@ from pathlib import Path
 from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
 
 from hazelsync.plugin import Plugin
-from hazelsync.settings import Settings
+from hazelsync.settings import ClusterSettings
 from hazelsync.reports import Report
 
 log = getLogger('hazelsync')
@@ -29,14 +29,14 @@ class Cluster:
     '''Class used to represent the cluster configuration for backup
     and restore'''
 
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: ClusterSettings):
         '''Create a cluster class
         '''
         job_type, job_options = settings.job()
         backend_type, backend_options = settings.backend()
 
         self.name = settings.name
-        self.prometheus = settings.prometheus
+        self.prometheus = settings.globals.prometheus
         self.backend = Plugin('backend').get(backend_type)(name=settings.name, **backend_options)
         self.job = Plugin('job').get(job_type)(name=settings.name, **job_options, backend=self.backend)
         self.job_type = job_type

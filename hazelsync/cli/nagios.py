@@ -7,7 +7,7 @@ from pathlib import Path
 
 import click
 
-from hazelsync.settings import Settings, CLUSTER_DIRECTORY
+from hazelsync.settings import ClusterSettings, CLUSTER_DIRECTORY
 from hazelsync.reports import Report, REPORT_DIRECTORY
 
 STATUS_MAPPING = {
@@ -44,10 +44,10 @@ def merge_status(status: str, other: str) -> str:
 @click.option('--days', '-d', default=1, help='Number in days which we consider the backup as unknown')
 def nagios(clusters, clusterdir, reportdir, days):
     '''Return a nagios compatible check for one or several backups'''
-    Settings.clusterdir = Path(clusterdir)
+    ClusterSettings.directory = Path(clusterdir)
     Report.directory = Path(reportdir)
     if not clusters: # Empty list
-        clusters = [cluster for cluster, config in Settings.list().items() if config['config_status'] == 'success']
+        clusters = [cluster for cluster, config in ClusterSettings.list().items() if config['config_status'] == 'success']
     display = []
     status = 'ok'
     reports = {}

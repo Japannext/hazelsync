@@ -358,6 +358,14 @@ toml = "*"
 testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "requests", "xmlschema"]
 
 [[package]]
+name = "pytest-data"
+version = "0.4"
+description = "Useful functions for managing data for pytest fixtures"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "pytest-mock"
 version = "3.6.1"
 description = "Thin-wrapper around the mock package for easier use with pytest"
@@ -556,7 +564,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "b36258619b5f53e38acf2d82c2d0e0dbf40f4f5c6f464a0820f94e594a937258"
+content-hash = "afea69fad3f8984cacbeb74f3c3efe000f3eb218422b804b380ccc0bcb4d5f0e"
 
 [metadata.files]
 astroid = [
@@ -701,6 +709,9 @@ pyparsing = [
 pytest = [
     {file = "pytest-6.2.5-py3-none-any.whl", hash = "sha256:7310f8d27bc79ced999e760ca304d69f6ba6c6649c0b60fb0e04a4a77cacc134"},
     {file = "pytest-6.2.5.tar.gz", hash = "sha256:131b36680866a76e6781d13f101efb86cf674ebb9762eb70d3082b6f29889e89"},
+]
+pytest-data = [
+    {file = "pytest-data-0.4.tar.gz", hash = "sha256:570413bf41ca8750c1a5994e9a38ff48150d934f5f462c21e1e68e962941eaec"},
 ]
 pytest-mock = [
     {file = "pytest-mock-3.6.1.tar.gz", hash = "sha256:40217a058c52a63f1042f0784f62009e976ba824c418cced42e88d5f40ab0e62"},
