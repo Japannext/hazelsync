@@ -7,7 +7,7 @@ from typing import Optional
 
 from pkg_resources import iter_entry_points
 
-log = getLogger(__name__)
+log = getLogger('hazelsync')
 
 class PluginType(Enum):
     '''Type of plugin and their entrypoint name'''

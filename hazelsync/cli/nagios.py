@@ -24,7 +24,7 @@ EXIT_MAPPING = {
     'unknown': 3,
 }
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('hazelsync')
 logging.basicConfig(level=logging.FATAL)
 
 def merge_status(status: str, other: str) -> str:

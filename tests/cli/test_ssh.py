@@ -11,7 +11,7 @@ from click.testing import CliRunner
 from hazelsync.cli.ssh import ssh
 from hazelsync.ssh import Unauthorized
 
-log = getLogger(__name__)
+log = getLogger('hazelsync')
 
 @patch('subprocess.run')
 @patch('hazelsync.cli.ssh.get_config', lambda x: {'plugin': 'rsync', 'options': {'allowed_paths': ['/opt/data']}})

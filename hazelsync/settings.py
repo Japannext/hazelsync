@@ -1,15 +1,37 @@
 '''A module for loading settings'''
 
+import logging.config
 from logging import getLogger
 from pathlib import Path
 from typing import Optional
 
 import yaml
 
-log = getLogger(__name__)
+log = getLogger('hazelsync')
 
 DEFAULT_SETTINGS = '/etc/hazelsync.yaml'
 CLUSTER_DIRECTORY = '/etc/hazelsync.d'
+
+DEFAULT_LOGGING = {
+    'version': 1,
+    'formatters': {
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'stream': 'ext://sys.stdout',
+        },
+        'syslog': {
+            'level': 'INFO',
+            'class': 'logging.handlers.SysLogHandler',
+            'address': '/dev/log',
+        },
+    },
+    'loggers': {
+        'hazelsync': ['console', 'syslog'],
+    },
+}
 
 class SettingError(AttributeError):
     '''Raise an exception if there is a configuration error'''
@@ -34,6 +56,13 @@ class Settings:
         self.global_config = global_config or {}
         log.debug("Global config: %s", self.global_config)
         self.prometheus = self.global_config.get('prometheus')
+
+    def setup_logging(self, action: str):
+        '''Setup logging depending on the action taken'''
+        myconfig = DEFAULT_LOGGING
+        config = self.global_config.get(logging, {})
+        myconfig.update(config)
+        logging.config.dictConfig(myconfig)
 
     @staticmethod
     def list() -> dict:

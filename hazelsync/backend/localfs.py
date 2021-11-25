@@ -10,7 +10,7 @@ from sysrsync.exceptions import RsyncError
 
 from hazelsync.backend import Backend
 
-log = getLogger(__name__)
+log = getLogger('hazelsync')
 
 class LocalfsBackend(Backend):
     '''Local filesystem backend for backups. Mainly there for testing and demonstration

@@ -13,7 +13,7 @@ import dateutil.parser
 REPORT_DIRECTORY = Path('/var/lib/hazelsync/reports')
 TIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
-log = getLogger(__name__)
+log = getLogger('hazelsync')
 
 class Status(Enum):
     '''Status of a job'''

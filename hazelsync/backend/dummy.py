@@ -8,7 +8,7 @@ from filelock import FileLock
 
 from hazelsync.backend import Backend
 
-log = getLogger(__name__)
+log = getLogger('hazelsync')
 
 class DummyBackend(Backend):
     '''Dummy backend for testing purposes.'''

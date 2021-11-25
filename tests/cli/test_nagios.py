@@ -48,7 +48,7 @@ REPORTS = {
     }
 }
 
-log = getLogger(__name__)
+log = getLogger('hazelsync')
 
 @pytest.fixture(scope='function')
 def dirs(tmp_path):

@@ -12,7 +12,7 @@ from hazelsync.utils.functions import ca_bundle
 
 CHUNK_SIZE = 1024*1024 # 1MB
 
-log = getLogger(__name__)
+log = getLogger('hazelsync')
 
 def verify_gzip(path: Path):
     '''Verify the CRC of a gzip

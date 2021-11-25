@@ -5,7 +5,7 @@ from pathlib import Path
 
 from hazelsync.ssh import SshHelper, Unauthorized
 
-log = getLogger(__name__)
+log = getLogger('hazelsync')
 
 class RsyncSsh(SshHelper):
     '''A class to handle the client authorization'''

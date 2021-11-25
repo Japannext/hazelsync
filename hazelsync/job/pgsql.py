@@ -8,7 +8,7 @@ from filelock import Timeout
 from hazelsync.job.rsync import RsyncJob
 from hazelsync.utils.rsync import rsync_run, RsyncError
 
-log = getLogger(__name__)
+log = getLogger('hazelsync')
 
 PRE_SCRIPT = '''psql -c "SELECT pg_start_backup('hazelsync', true);"'''
 POST_SCRIPT = '''psql -c "SELECT pg_stop_backup();"'''

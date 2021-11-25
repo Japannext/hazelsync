@@ -8,7 +8,7 @@ import click
 from hazelsync.cluster import Cluster
 from hazelsync.settings import Settings
 
-log = getLogger(__name__)
+log = getLogger('hazelsync')
 
 @click.command()
 @click.argument('name')
@@ -17,6 +17,7 @@ def stream(name):
     try:
         log.debug("Initializing cluster")
         settings = Settings.parse(name)
+        settings.setup_logging('stream')
         cluster = Cluster(settings)
         log.debug("Cluster initialized")
         log.debug("Starting backup")

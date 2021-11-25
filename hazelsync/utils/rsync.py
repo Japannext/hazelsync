@@ -7,7 +7,7 @@ from logging import getLogger
 from pathlib import Path
 from typing import Optional, List
 
-log = getLogger(__name__)
+log = getLogger('hazelsync')
 
 # Cronjob don't have PATH by default, so let's have sane defaults.
 DEFAULT_PATH = ':'.join([

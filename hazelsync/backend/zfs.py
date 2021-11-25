@@ -9,7 +9,7 @@ from filelock import FileLock
 from hazelsync.backend import Backend
 from hazelsync.utils.zfs import *
 
-log = getLogger(__name__)
+log = getLogger('hazelsync')
 
 class ZfsBackend(Backend):
     '''Local filesystem backend for backups. Mainly there for testing and demonstration

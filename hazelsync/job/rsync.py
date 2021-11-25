@@ -12,7 +12,7 @@ from hazelsync.utils.rsync import rsync_run, RsyncError, PATH
 
 Script = Union[str, dict]
 
-log = getLogger(__name__)
+log = getLogger('hazelsync')
 
 class RunStyle(Enum):
     '''The run style of rsync (parallel or sequential)'''

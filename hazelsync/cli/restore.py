@@ -8,7 +8,7 @@ import click
 from hazelsync.cluster import Cluster
 from hazelsync.settings import Settings
 
-log = getLogger(__name__)
+log = getLogger('hazelsync')
 
 @click.command()
 @click.argument('name')

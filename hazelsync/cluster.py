@@ -1,5 +1,6 @@
 '''Retrieve a cluster configuration'''
 
+import logging
 from logging import getLogger, FileHandler, DEBUG, Formatter, basicConfig
 from datetime import datetime
 from pathlib import Path

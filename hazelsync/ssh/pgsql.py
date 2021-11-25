@@ -6,7 +6,7 @@ from pathlib import Path
 from hazelsync.ssh.rsync import RsyncSsh
 from hazelsync.job.pgsql import PRE_SCRIPT, POST_SCRIPT
 
-log = getLogger(__name__)
+log = getLogger('hazelsync')
 
 class PgsqlSsh(RsyncSsh):
     '''A class to handle the client authorization'''
