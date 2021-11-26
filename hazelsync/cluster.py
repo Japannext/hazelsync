@@ -5,13 +5,20 @@ from logging import getLogger, FileHandler, DEBUG, Formatter, basicConfig
 from datetime import datetime
 from pathlib import Path
 
-from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
-
 from hazelsync.plugin import Plugin
 from hazelsync.settings import ClusterSettings
 from hazelsync.reports import Report
+from hazelsync.metrics import Gauge, Timer
 
 log = getLogger('hazelsync')
+
+PROM_STATUS_MAP = {
+    'success': 0,
+    'failure': 1,
+    'partial': 2,
+    'locked': 3,
+    'unknown': 4
+}
 
 def merge_statuses(slots) -> str:
     '''Return the general status given a list of slots'''
@@ -19,6 +26,8 @@ def merge_statuses(slots) -> str:
         status = 'failure'
     elif any(slot['status'] == 'failure' for slot in slots):
         status = 'partial'
+    elif any(slot['status'] == 'locked' for slot in slots):
+        status = 'locked'
     elif all(slot['status'] == 'success' for slot in slots):
         status = 'success'
     else:
@@ -36,20 +45,20 @@ class Cluster:
         backend_type, backend_options = settings.backend()
 
         self.name = settings.name
-        self.prometheus = settings.globals.prometheus
         self.backend = Plugin('backend').get(backend_type)(name=settings.name, **backend_options)
         self.job = Plugin('job').get(job_type)(name=settings.name, **job_options, backend=self.backend)
         self.job_type = job_type
-
-        self.registry = CollectorRegistry()
-        self.metrics = {
-            'runtime': Gauge('runtime', 'Time the job took',
-                ['action', 'cluster', 'job'], registry=self.registry),
-            'job_status': Gauge('job_status', 'Status of the job',
-                ['action', 'cluster', 'job'], registry=self.registry),
-            'slot_status': Gauge('slot_status', 'Status of each slot',
-                ['action', 'cluster', 'job', 'slot'], registry=self.registry),
-        }
+        # Metrics
+        self.engine = settings.globals.metrics
+        self.runtime = Timer('runtime',
+            tags={'action': None, 'cluster': self.name, 'job': self.job_type},
+            desc='Time the job took', engine=self.engine)
+        self.job_status = Gauge('job_status',
+            tags={'action': None, 'cluster': self.name, 'job': self.job_type},
+            desc='Status of the job', engine=self.engine)
+        self.slot_status = Gauge('slot_status',
+            tags={'action': None, 'cluster': self.name, 'job': self.job_type, 'slot': None},
+            desc='Status of each slot', engine=self.engine)
 
     def config_logging(self, action: str):
         '''Configure the logging'''
@@ -70,10 +79,9 @@ class Cluster:
         '''Run the backup of a cluster'''
         self.config_logging('backup')
         start_time = datetime.now()
-        labels = ('backup', self.name, self.job_type)
-        with self.metrics['runtime'].labels(*labels).time():
+        with self.runtime.time(action='backup'):
             slots = self.job.backup()
-        with self.metrics['runtime'].labels('snapshot', self.name, self.job_type).time():
+        with self.runtime.time(action='snapshot'):
             for slot in slots:
                 if slot['status'] == 'success':
                     self.backend.snapshot(slot['slot'])
@@ -89,30 +97,26 @@ class Cluster:
             slots=slots,
         )
         report.write()
-        self.metrics['job_status'].labels(*labels).set(status)
+        self.job_status.set(PROM_STATUS_MAP[status], action='backup')
         for slot in slots:
-            self.metrics['slot_status'].labels(*labels, slot['slot']).set(slot['status'])
-        self.publish_metrics()
+            self.slot_status.set(PROM_STATUS_MAP[slot['status']], action='backup', slot=slot['slot'])
+        self.engine.flush()
 
     def stream(self):
         '''Stream some data to make backup faster'''
         self.config_logging('stream')
-        labels = ('stream', self.name, self.job_type)
-        with self.metrics['runtime'].labels(*labels).time():
+        with self.runtime.time(action='stream'):
             slots = self.job.stream()
         slots = self.job.stream()
         status = merge_statuses(slots)
-        self.metrics['job_status'].labels(*labels).set(status)
+        self.job_status.set(PROM_STATUS_MAP[status], action='stream')
         for slot in slots:
-            self.metrics['slot_status'].labels(*labels, slot['slot']).set(slot['status'])
-        self.publish_metrics()
-
-    def publish_metrics(self, action):
-        '''Send metrics to prometheus if configured'''
-        if self.prometheus:
-            push_to_gateway(self.prometheus, job='hazelsync', registry=self.registry)
+            self.slot_status.set(PROM_STATUS_MAP[slot['status']], action='stream', slot=slot['slot'])
+        self.engine.flush()
 
     def restore(self, snapshot):
         '''Restore a snapshot on a cluster'''
         self.config_logging('restore')
-        self.job.restore(snapshot)
+        with self.runtime.time(action='restore'):
+            self.job.restore(snapshot)
+        self.engine.flush()

@@ -17,7 +17,7 @@ def stream(name):
     try:
         cluster = Cluster(settings)
         log.debug("Cluster initialized")
-        log.debug("Starting backup")
+        log.info("Running hazel stream for %s", name)
         cluster.stream()
     except Exception as err:
         log.exception(err)

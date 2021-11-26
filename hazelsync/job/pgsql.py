@@ -45,6 +45,7 @@ class PgsqlJob(RsyncJob):
             slot = {'slot': host.split('.')[0]}
             try:
                 self.stream_host(host)
+                slot['status'] = 'success'
             except RsyncError as err:
                 log.error("Failed to rsync (stream) for %s, %s: %s", host, self.waldir, err)
                 slot['status'] = 'failure'

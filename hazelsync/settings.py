@@ -1,11 +1,14 @@
 '''A module for loading settings'''
 
 import logging.config
+import sys
 from logging import getLogger
 from pathlib import Path
 from typing import Optional
 
 import yaml
+
+from hazelsync.metrics import get_metrics_engine
 
 DEFAULT_SETTINGS = '/etc/hazelsync.yaml'
 CLUSTER_DIRECTORY = '/etc/hazelsync.d'
@@ -13,22 +16,29 @@ CLUSTER_DIRECTORY = '/etc/hazelsync.d'
 DEFAULT_LOGGING = {
     'version': 1,
     'formatters': {
+        'syslog': {'format': '%(name)s[%(process)d]: %(levelname)s: %(message)s'},
+        'default': {'format': '%(asctime)s - %(name)s: %(levelname)s %(message)s'},
     },
     'handlers': {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'stream': 'ext://sys.stdout',
+            'stream': sys.stderr,
+            'formatter': 'default',
         },
         'syslog': {
             'level': 'INFO',
             'class': 'logging.handlers.SysLogHandler',
             'address': '/dev/log',
+            'facility': 'local0',
+            'formatter': 'syslog',
         },
     },
     'loggers': {
         'hazelsync': {
             'handlers': ['console', 'syslog'],
+            'level': 'DEBUG',
+            'propagate': True,
         },
     },
 }
@@ -46,11 +56,12 @@ class GlobalSettings:
         text = path.read_text(encoding='utf-8')
         data = yaml.safe_load(text)
         self.default_backend = data.get('default_backend', 'localfs')
-        self.prometheus = data.get('prometheus')
         self.job_options = data.get('job_options')
         self.backend_options = data.get('backend_options')
         self.logging = data.get('logging', DEFAULT_LOGGING)
-        self.log = self.logger()
+
+        metrics_config = data.get('metrics', {})
+        self.metrics = get_metrics_engine(metrics_config)
 
     def logger(self):
         '''Setup logging and return the logger'''
