@@ -162,8 +162,12 @@ class Report:
             status = 'WARNING'
         else:
             status = 'UNKNOWN'
-        if datetime.now() >= self.start_time + timedelta(days=days):
-            status = 'UNKNOWN'
         slot_success = len([s for s in self.slots if s['status'] == 'success'])
         slot_total = len(self.slots)
-        return f"[{status}] {self.cluster} Slots: {slot_success}/{slot_total} succeeded"
+        message = f"slots {slot_success}/{slot_total} succeeded"
+
+        if datetime.now() >= self.start_time + timedelta(days=days):
+            status = 'UNKNOWN'
+            message = f"Last report too old ({self.start_time})"
+
+        return f"[{status}] {self.cluster}: {message}"
