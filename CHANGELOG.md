@@ -1,3 +1,14 @@
+## v1.3.0
+
+### Features
+
+* Metrics for backup and stream actions using Prometheus PushGateway
+* Experimental metrics for backup and stream actions using InfluxDB v2 API
+
+### Changes
+
+* Centralizing log management and making it configurable from the main config file
+
 ## v1.2.0
 
 ### Features
