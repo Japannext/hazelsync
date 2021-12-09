@@ -41,5 +41,3 @@ class TestTimer:
         assert isinstance(timer.start, datetime)
         assert isinstance(timer.stop, datetime)
         assert timer.start < timer.stop
-        assert timer.tags['start_time']
-        assert timer.tags['stop_time']

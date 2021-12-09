@@ -13,7 +13,6 @@ from freezegun import freeze_time
 from hazelsync.cli.nagios import nagios, merge_status
 from hazelsync.settings import ClusterSettings
 
-
 class TestNagios:
     clusters = {
         'backup1': {
@@ -40,7 +39,7 @@ class TestNagios:
 
     @freeze_time('2020-12-24T12:00:00+09:00')
     def test_nagios(self, clusterdir, reportdir, caplog):
-        caplog.set_level(logging.DEBUG)
+        caplog.set_level(logging.FATAL)
         runner = CliRunner(mix_stderr=True)
         result = runner.invoke(nagios, ['--clusterdir', str(clusterdir), '--reportdir', str(reportdir)])
         if result.exception:
@@ -50,7 +49,7 @@ class TestNagios:
         assert result.exit_code == 0
         assert result.output == dedent('''\
             OK Hazelsync backups - 1/1
-            [OK] backup1 Slots: 1/1 succeeded
+            [OK] backup1: slots 1/1 succeeded
         ''')
 
     def test_merge_status(self):

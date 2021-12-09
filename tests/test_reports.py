@@ -83,4 +83,4 @@ class TestReport:
     def test_to_nagios(self):
         report = dummy_report()
         text = report.to_nagios(1)
-        assert text == "[OK] mycluster Slots: 0/0 succeeded"
+        assert text == "[OK] mycluster: slots 0/0 succeeded"
