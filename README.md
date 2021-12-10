@@ -11,3 +11,20 @@ host in a mirror (in a Nexus server internal pip repository for instance).
 poetry build
 pip3 install dist/hazelsync-1.3.0-py3-none-any.whl
 ```
+
+## Configuration
+
+General configuration is done in `/etc/hazelsync.yaml`.
+
+Each cluster to backup should have its configuration in `/etc/hazelsync.d/<cluster_name>.yaml`.
+
+More details:
+* [General configuration](./docs/configuration.md)
+* [Rsync job](./docs/jobs/rsync.md)
+
+## Usage
+
+The you can start the backup with:
+```bash
+sudo hazel backup mycluster
+```

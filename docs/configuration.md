@@ -25,7 +25,7 @@ backend_options:
 
 ## Job configuration
 
-Each job need to be configured in `/etc/hazelsync.d/<job_name>.yaml`.
+Each job need to be configured in `/etc/hazelsync.d/<cluster_name>.yaml`.
 
 Settings:
 * `name` (mandatory): The display name of the job.
