@@ -1,25 +1,18 @@
 '''Restore the snapshot(s) of a cluster'''
 
-import sys
+from logging import getLogger
 
 import click
 
-from hazelsync.cluster import Cluster
-from hazelsync.settings import ClusterSettings
+from hazelsync.cli import with_cluster
+
+log = getLogger('hazelsync')
 
 @click.command()
 @click.argument('name')
 @click.argument('snapshot')
 def restore(name, snapshot):
     '''Restore a cluster to a given snapshot'''
-    settings = ClusterSettings(name)
-    log = settings.globals.logger()
-    log.debug("Loaded cluster configuration for %s", name)
-    try:
-        cluster = Cluster(settings)
-        log.debug("Cluster initialized")
-        log.debug("Starting backup")
+    with with_cluster(name) as cluster:
+        log.debug("Starting restore")
         cluster.restore(snapshot)
-    except Exception as err:
-        log.exception(err)
-        sys.exit(1)

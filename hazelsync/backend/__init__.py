@@ -9,17 +9,20 @@ from filelock import FileLock
 class Backend:
     '''Abstract class for implementing a new hazelsync backend
     '''
-    def lock(self, slot: Path, timeout: int = -1) -> ContextManager:
+
+    @staticmethod
+    def lock(slot: Path, timeout: int = -1) -> ContextManager:
         '''Default class for handling locking a slot.
         Should return a context manager that should lock on enter,
         and release the lock on exit.
         '''
+        # pylint: disable=abstract-class-instantiated
         return FileLock(slot / '.hazesync.lock', timeout)
 
     @abstractmethod
     def ensure_slot(self, name: str) -> Path:
-        pass
+        '''Make sure the slot is created if it needs bootstrapping'''
 
     @abstractmethod
     def snapshot(self, slot):
-        pass
+        '''Perform a snapshot of a slot'''

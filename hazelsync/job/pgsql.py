@@ -72,3 +72,15 @@ class PgsqlJob(RsyncJob):
                 user=self.user,
                 private_key=self.private_key,
             )
+
+    def restore(self):
+        '''Restore job
+        '''
+        raise NotImplementedError()
+
+    def restore_rsync_host(self, host: str, snapshot: Path):
+        '''Restore the data of a single host
+        :param host: The host to restore
+        :param snapshot: The snapshot to restore
+        '''
+        raise NotImplementedError()

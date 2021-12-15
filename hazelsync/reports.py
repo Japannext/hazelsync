@@ -90,7 +90,7 @@ class Report:
             return report
         except KeyError as err:
             key = err.args[0]
-            raise Exception(f"Missing argument: {key}")
+            raise Exception(f"Missing argument: {key}") from err
 
     @staticmethod
     def get(cluster: str,
@@ -113,7 +113,7 @@ class Report:
         for path in paths:
             try:
                 reports.append(Report.read(path))
-            except Exception as err:
+            except Exception as err:  # pylint: disable=broad-except
                 log.error("Cannot read report at %s: %s", path, err)
                 continue
         reports = [Report.read(path) for path in paths]
@@ -121,6 +121,7 @@ class Report:
 
     @staticmethod
     def last_report(cluster: str) -> 'Report':
+        '''Return the last know report'''
         path = Report.directory / cluster
         if path.is_dir():
             log.debug("Directory %s exists", path)

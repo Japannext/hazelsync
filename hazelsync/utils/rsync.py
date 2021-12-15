@@ -1,8 +1,7 @@
 '''Utils for running rsync commands'''
 
 import os
-import shlex
-import subprocess
+import subprocess #nosec
 from logging import getLogger
 from pathlib import Path
 from typing import Optional, List
@@ -23,9 +22,11 @@ DEFAULT_PATH = ':'.join([
 PATH = os.environ.get('PATH') or DEFAULT_PATH
 
 class RsyncError(RuntimeError):
+    '''Error issued when the rsync command fails'''
     def __init__(self, err):
         super().__init__(f"Error during command `{err.cmd}` (return code {err.returncode}): {err.stderr}")
 
+# pylint: disable=too-many-arguments
 def rsync_run(
     source: Path,
     destination: Path,
@@ -63,8 +64,9 @@ def rsync_run(
 def execute(cmd):
     '''Execute a command and log properly'''
     try:
-        proc = subprocess.run(cmd, shell=False, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=dict(PATH=PATH))
+        proc = subprocess.run(cmd, shell=False, check=True, #nosec
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=dict(PATH=PATH))
         for line in proc.stdout.split(b'\n'):
             log.debug(line)
     except subprocess.CalledProcessError as err:
-        raise Exception(f"Error during command `{err.cmd}` (return code {err.returncode}): {err.stderr}")
+        raise Exception(f"Error during command `{err.cmd}` (return code {err.returncode}): {err.stderr}") from err

@@ -11,8 +11,9 @@ from hazelsync.cli.stream import stream
 from hazelsync.cli.nagios import nagios
 from hazelsync.cluster import Cluster
 
-log_format = '%(asctime)s %(levelname)s %(name)s %(message)s'
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=log_format)
+LOG_FORMAT = '%(asctime)s %(levelname)s %(name)s %(message)s'
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=LOG_FORMAT)
 log = logging.getLogger('hazelsync')
 
 @click.group()

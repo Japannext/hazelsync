@@ -2,7 +2,6 @@
 
 import logging
 import sys
-from datetime import datetime, timedelta
 from pathlib import Path
 
 import click
@@ -34,8 +33,7 @@ def merge_status(status: str, other: str) -> str:
     other_order = order.index(other)
     if status_order >= other_order:
         return status
-    elif other_order > status_order:
-        return other
+    return other
 
 @click.command()
 @click.argument('clusters', nargs=-1)
@@ -47,7 +45,11 @@ def nagios(clusters, clusterdir, reportdir, days):
     ClusterSettings.directory = Path(clusterdir)
     Report.directory = Path(reportdir)
     if not clusters: # Empty list
-        clusters = [cluster for cluster, config in ClusterSettings.list().items() if config['config_status'] == 'success']
+        clusters = [
+            cluster
+            for cluster, config in ClusterSettings.list().items()
+            if config['config_status'] == 'success'
+        ]
     display = []
     status = 'ok'
     reports = {}
@@ -57,7 +59,7 @@ def nagios(clusters, clusterdir, reportdir, days):
             reports[cluster_name] = report
             display.append(report.to_nagios(days))
             mystatus = STATUS_MAPPING[report.status]
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except
             display.append(f"[UNKNOWN] {cluster_name}: {err}")
             mystatus = 'unknown'
         status = merge_status(status, mystatus)

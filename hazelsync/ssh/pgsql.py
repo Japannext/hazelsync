@@ -1,7 +1,6 @@
 '''Define the behavior of the SSH helper with the rsync plugin'''
 
 from logging import getLogger
-from pathlib import Path
 
 from hazelsync.ssh.rsync import RsyncSsh
 from hazelsync.job.pgsql import PRE_SCRIPT, POST_SCRIPT

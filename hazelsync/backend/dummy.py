@@ -4,8 +4,6 @@ from logging import getLogger
 from pathlib import Path
 from tempfile import mkdtemp
 
-from filelock import FileLock
-
 from hazelsync.backend import Backend
 
 log = getLogger('hazelsync')
@@ -13,6 +11,7 @@ log = getLogger('hazelsync')
 class DummyBackend(Backend):
     '''Dummy backend for testing purposes.'''
     def __init__(self, name:str=None, tmp_dir=None):
+        self.name = name
         log.info("Initialized Dummy backend")
         if tmp_dir:
             self.tmp_dir = tmp_dir
