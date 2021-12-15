@@ -4,7 +4,6 @@ import logging.config
 import sys
 from logging import getLogger
 from pathlib import Path
-from typing import Optional
 
 import yaml
 
@@ -43,6 +42,8 @@ DEFAULT_LOGGING = {
     },
 }
 
+log = getLogger('hazelsync')
+
 class SettingError(AttributeError):
     '''Raise an exception if there is a configuration error'''
     def __init__(self, job, message):
@@ -66,9 +67,9 @@ class GlobalSettings:
     def logger(self):
         '''Setup logging and return the logger'''
         logging.config.dictConfig(self.logging)
-        log = getLogger('hazelsync')
-        log.debug('Logger initialized')
-        return log
+        mylogger = getLogger('hazelsync')
+        mylogger.debug('Logger initialized')
+        return mylogger
 
     def job(self, job_type: str) -> dict:
         '''Return defaults for a job type'''
@@ -103,7 +104,7 @@ class ClusterSettings:
             settings[cluster] = {'path': path}
             try:
                 settings[cluster]['config_status'] = 'success'
-            except Exception as err:
+            except KeyError as err:
                 log.error(err)
                 settings[cluster]['config'] = {}
                 settings[cluster]['config_status'] = 'failure'

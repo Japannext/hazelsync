@@ -1,12 +1,12 @@
 '''A job to backup hashicorp Vault'''
 
-from urllib.parse import urlparse
-from logging import getLogger
 from gzip import GzipFile
+from logging import getLogger
+from pathlib import Path
+from urllib.parse import urlparse
 
 import hvac
 import requests
-from pathlib import Path
 
 from hazelsync.utils.functions import ca_bundle
 
@@ -21,24 +21,6 @@ def verify_gzip(path: Path):
     '''
     GzipFile(str(path)).read()
 
-class AuthMethod:
-    '''A valid authentication method with its parameters'''
-    def __init__(self, method, **kwargs):
-        self.method = method
-        self.kwargs = kwargs
-    def login(self, client):
-        '''Login a HVAC client with the given authentication method'''
-        if self.method == 'token':
-            client.token = self.kwargs.get('token')
-        elif self.method == 'tls':
-            pass
-        else:
-            try:
-                getattr(client.auth, self.method).login(**self.kwargs)
-            except AttributeError as err:
-                log.error("Auth method %s not supported by python hvac library", self.method)
-                raise err
-
 class VaultJob:
     '''A job to backup and restore Hashicorp Vault'''
     def __init__(self,
@@ -48,6 +30,7 @@ class VaultJob:
         backend,
         ca: str = ca_bundle(),
     ):
+        self.name = name
         uri = urlparse(url)
         self.client = hvac.Client(url)
         if ca:
@@ -55,11 +38,23 @@ class VaultJob:
             self.client.session = session
             session.verify = ca
         method = auth.pop('method')
-        auth_method = AuthMethod(method, **auth)
-        auth_method.login(self.client)
+        self.login(method, auth)
 
         self.slot = backend.ensure_slot(uri.hostname)
         self.lock = backend.lock(self.slot)
+
+    def login(self, auth_method: str, options: dict):
+        '''Login a HVAC client with the given authentication method'''
+        if auth_method == 'token':
+            self.client.token = options.get('token')
+        elif auth_method == 'tls':
+            pass
+        else:
+            try:
+                getattr(self.client.auth, auth_method).login(**options)
+            except AttributeError as err:
+                log.error("Auth method %s not supported by python hvac library", auth_method)
+                raise err
 
     def backup(self):
         '''Backup Hashicorp Vault with the REST API'''
@@ -83,4 +78,4 @@ class VaultJob:
 
     def restore(self, snapshot):
         '''Restore Hashicorp Vault with the REST API'''
-        pass
+        raise NotImplementedError("Restore for Hashicorp Vault not implemented yet")

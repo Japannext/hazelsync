@@ -36,6 +36,7 @@ class Metric:
 
     def __post_init__(self):
         self.engine.register([self])
+        self.fields = dict(self.additional_fields)
 
 @dataclass
 class Gauge(Metric):
@@ -62,8 +63,8 @@ class Timer(Gauge):
         '''Stop the timer and issue the metric'''
         self.stop = datetime.now()
         self.runtime = (self.stop - self.start).total_seconds()
-        self.additional_fields['start_time'] = self.start.timestamp()
-        self.additional_fields['stop_time'] = self.stop.timestamp()
+        self.fields['start_time'] = self.start.timestamp()
+        self.fields['stop_time'] = self.stop.timestamp()
         self.set(self.runtime, **tags)
 
     @contextmanager
@@ -122,7 +123,7 @@ class Influxdb2(MetricEngine):
         '''Registrating a metric'''
     def set(self, metric, value, tags):
         '''Sending a metric through the write API'''
-        fields = {metric.field: value, **metric.additional_fields}
+        fields = {metric.field: value, **metric.fields}
         log.debug('Attempting to set %s@%s: %s (%s | %s)', metric.name, metric.field, value, tags, fields)
         record = dict(measurement=metric.name, tags=tags, fields=fields)
         point = Point.from_dict(record)

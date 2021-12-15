@@ -1,14 +1,11 @@
 '''Local filesystem backend'''
 
 from datetime import datetime
-from pathlib import Path
 from logging import getLogger
 from typing import Optional
 
-import sysrsync
-from sysrsync.exceptions import RsyncError
-
 from hazelsync.backend import Backend
+from hazelsync.utils.rsync import rsync_run, RsyncError
 
 log = getLogger('hazelsync')
 
@@ -49,7 +46,7 @@ class LocalfsBackend(Backend):
         snapshot_name = slot.name + '-' + now.strftime('%Y-%m-%dT%H:%M:%s')
         mysnapshot = self.snapshotdir / snapshot_name
         try:
-            sysrsync.run(
+            rsync_run(
                 source=slot,
                 destination=mysnapshot,
                 options=['--link-dest', str(slot)],

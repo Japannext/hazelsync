@@ -4,10 +4,8 @@ from datetime import datetime
 from logging import getLogger
 from pathlib import Path
 
-from filelock import FileLock
-
 from hazelsync.backend import Backend
-from hazelsync.utils.zfs import *
+from hazelsync.utils.zfs import *  # pylint: disable=wildcard-import
 
 log = getLogger('hazelsync')
 

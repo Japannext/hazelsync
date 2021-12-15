@@ -7,22 +7,19 @@ will be accepted or rejected.
 '''
 
 import os
-import subprocess #nosec
 import sys
 import logging
 from logging import getLogger
-from logging.handlers import SysLogHandler
 from pathlib import Path
 
 import click
 import click_logging
 import yaml
 
-from hazelsync.plugin import Plugin
+from hazelsync.plugin import get_plugin
 from hazelsync.ssh import Unauthorized
 
 log = getLogger('hazelsync')
-#log.addHandler(SysLogHandler(address='/dev/log'))
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 click_logging.basic_config(log)
 
@@ -45,7 +42,7 @@ def ssh(config):
         plugin_config = config.get('options', {})
 
         log.debug("Initializing SSH helper plugin")
-        plugin = Plugin('ssh').get(plugin_name)
+        plugin = get_plugin('ssh', plugin_name)
         log.debug("Loaded plugin %s", plugin)
         helper = plugin(plugin_config)
 

@@ -1,6 +1,6 @@
 '''Rsync style backup'''
 
-import subprocess
+import subprocess #nosec
 from logging import getLogger
 from enum import Enum
 from pathlib import Path
@@ -39,6 +39,7 @@ class RsyncJob:
         :param paths: A list of path that will need to be rsynced from the target hosts.
         :param run_style: Whether to run the hosts sequentially or in parallel.
         '''
+        self.name = name
         self.hosts = hosts
         self.paths = [Path(path) for path in paths]
         self.private_key = Path(private_key)
@@ -85,7 +86,7 @@ class RsyncJob:
             timeout = data.get('timeout', 120)
             log.debug("Running %s script: %s", stype, script_cmd)
             cmd = ['ssh', '-l', self.user, '-i', str(self.private_key), host, script_cmd]
-            subprocess.run(cmd, shell=False, timeout=timeout, env=dict(PATH=PATH),
+            subprocess.run(cmd, shell=False, timeout=timeout, env=dict(PATH=PATH), #nosec
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
 
     def backup_rsync_host(self, host: str):

@@ -1,14 +1,13 @@
 '''Retrieve a cluster configuration'''
 
-import logging
-from logging import getLogger, FileHandler, DEBUG, Formatter, basicConfig
 from datetime import datetime
+from logging import getLogger, FileHandler, DEBUG, Formatter
 from pathlib import Path
 
-from hazelsync.plugin import Plugin
-from hazelsync.settings import ClusterSettings
-from hazelsync.reports import Report
 from hazelsync.metrics import Gauge, Timer
+from hazelsync.plugin import get_plugin
+from hazelsync.reports import Report
+from hazelsync.settings import ClusterSettings
 
 log = getLogger('hazelsync')
 
@@ -45,18 +44,20 @@ class Cluster:
         backend_type, backend_options = settings.backend()
 
         self.name = settings.name
-        self.backend = Plugin('backend').get(backend_type)(name=settings.name, **backend_options)
-        self.job = Plugin('job').get(job_type)(name=settings.name, **job_options, backend=self.backend)
+        self.backend = get_plugin('backend', backend_type)(name=settings.name, **backend_options)
+        self.job = get_plugin('job', job_type)(name=settings.name, **job_options, backend=self.backend)
         self.job_type = job_type
+
         # Metrics
         self.engine = settings.globals.metrics
-        self.runtime = Timer('runtime',
+        self.metrics = {}
+        self.metrics['runtime'] = Timer('runtime',
             tags={'action': None, 'cluster': self.name, 'job': self.job_type},
             desc='Time the job took', engine=self.engine)
-        self.job_status = Gauge('job_status',
+        self.metrics['job_status'] = Gauge('job_status',
             tags={'action': None, 'cluster': self.name, 'job': self.job_type},
             desc='Status of the job', engine=self.engine)
-        self.slot_status = Gauge('slot_status',
+        self.metrics['slot_status'] = Gauge('slot_status',
             tags={'action': None, 'cluster': self.name, 'job': self.job_type, 'slot': None},
             desc='Status of each slot', engine=self.engine)
 
@@ -79,9 +80,9 @@ class Cluster:
         '''Run the backup of a cluster'''
         self.config_logging('backup')
         start_time = datetime.now()
-        with self.runtime.time(action='backup'):
+        with self.metrics['runtime'].time(action='backup'):
             slots = self.job.backup()
-        with self.runtime.time(action='snapshot'):
+        with self.metrics['runtime'].time(action='snapshot'):
             for slot in slots:
                 if slot['status'] == 'success':
                     self.backend.snapshot(slot['slot'])
@@ -97,26 +98,26 @@ class Cluster:
             slots=slots,
         )
         report.write()
-        self.job_status.set(PROM_STATUS_MAP[status], action='backup')
+        self.metrics['job_status'].set(PROM_STATUS_MAP[status], action='backup')
         for slot in slots:
-            self.slot_status.set(PROM_STATUS_MAP[slot['status']], action='backup', slot=slot['slot'])
+            self.metrics['slot_status'].set(PROM_STATUS_MAP[slot['status']], action='backup', slot=slot['slot'])
         self.engine.flush()
 
     def stream(self):
         '''Stream some data to make backup faster'''
         self.config_logging('stream')
-        with self.runtime.time(action='stream'):
+        with self.metrics['runtime'].time(action='stream'):
             slots = self.job.stream()
         slots = self.job.stream()
         status = merge_statuses(slots)
-        self.job_status.set(PROM_STATUS_MAP[status], action='stream')
+        self.metrics['job_status'].set(PROM_STATUS_MAP[status], action='stream')
         for slot in slots:
-            self.slot_status.set(PROM_STATUS_MAP[slot['status']], action='stream', slot=slot['slot'])
+            self.metrics['slot_status'].set(PROM_STATUS_MAP[slot['status']], action='stream', slot=slot['slot'])
         self.engine.flush()
 
     def restore(self, snapshot):
         '''Restore a snapshot on a cluster'''
         self.config_logging('restore')
-        with self.runtime.time(action='restore'):
+        with self.metrics['runtime'].time(action='restore'):
             self.job.restore(snapshot)
         self.engine.flush()

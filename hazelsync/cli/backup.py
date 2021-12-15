@@ -1,24 +1,17 @@
 '''Backup a cluster'''
 
-import sys
+from logging import getLogger
 
 import click
 
-from hazelsync.cluster import Cluster
-from hazelsync.settings import ClusterSettings
+from hazelsync.cli import with_cluster
+
+log = getLogger('hazelsync')
 
 @click.command()
 @click.argument('name')
 def backup(name):
     '''Create a backup for a configured cluster'''
-    settings = ClusterSettings(name)
-    log = settings.globals.logger()
-    log.debug("Loaded cluster configuration for %s", name)
-    try:
-        cluster = Cluster(settings)
-        log.debug("Cluster initialized")
+    with with_cluster(name) as cluster:
         log.debug("Starting backup")
         cluster.backup()
-    except Exception as err:
-        log.exception(err)
-        sys.exit(1)
