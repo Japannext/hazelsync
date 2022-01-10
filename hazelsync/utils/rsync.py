@@ -22,9 +22,11 @@ DEFAULT_PATH = ':'.join([
 PATH = os.environ.get('PATH') or DEFAULT_PATH
 
 class RsyncError(RuntimeError):
+    '''Error issued when the rsync command fails'''
     def __init__(self, err):
         super().__init__(f"Error during command `{err.cmd}` (return code {err.returncode}): {err.stderr}")
 
+# pylint: disable=too-many-arguments
 def rsync_run(
     source: Path,
     destination: Path,

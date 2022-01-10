@@ -16,6 +16,6 @@ def with_cluster(name):
         cluster = Cluster(settings)
         log.debug("Cluster initialized")
         yield cluster
-    except Exception as err:
+    except Exception as err: # pylint: disable=broad-except
         log.exception(err)
         sys.exit(1)
