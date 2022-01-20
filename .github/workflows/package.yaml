@@ -1,0 +1,25 @@
+# vim:set ts=2 sw=2 sts=2 et:
+---
+name: Package into pip package
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checking out git repository
+        uses: actions/checkout@v2
+      - name: Setup python environment
+        uses: ./.github/actions/python-poetry
+      - name: Build pip package
+        run: poetry build
+      - name:
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref }}
+          file: dist/*
+          file_glob: true
